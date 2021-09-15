@@ -1,0 +1,74 @@
+name: Sanity Checks
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - uses: pre-commit/action@v2.0.3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+  tagging:
+    name: "Tagging (dry-run)"
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    outputs:
+      net_tag: ${{ steps.tag_version.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v5.6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
+      - run: echo "Calculated Next Tag is ${{ steps.tag_version.outputs.tags }}"
+      #use this with ${{needs.job1.outputs.output1}}
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: arduino/setup-task@v1
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+      - name: Lint and tests
+        run: |
+          task test
+  build:
+    name: "Test Build"
+    runs-on: ubuntu-latest
+    needs:
+      - pre-commit
+      - tagging
+    env:
+      IMAGE_NAME: jackbit/pdh
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{env.IMAGE_NAME}}
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=
+          tags: |
+            type=raw,value=${{needs.tagging.outputs.next_tag}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          file: containers/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
