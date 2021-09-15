@@ -63,14 +63,14 @@ tasks:
   test:
     desc: Run python test and coverage
     cmds:
-      - pytest --cov=cloudtools .
+      - pytest --cov=pdh .
 
   build:
     desc: Build docker image
     cmds:
-      - podman build -t $IMAGE_NAME:local .
+      - docker build -t $IMAGE_NAME:local -f containers/Dockerfile .
 
   clean:
     desc: Cleanup docker image
     cmds:
-      - podman rmi -f $IMAGE_NAME:local
+      - docker rmi -f $IMAGE_NAME:local

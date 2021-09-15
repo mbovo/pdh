@@ -1,7 +1,7 @@
 # PDH - PagerDuty CLI for humans
 
 ![Build Image](https://github.com/mbovo/pdh/actions/workflows/build-image.yml/badge.svg)
-![Publishing Doc](https://github.com/mbovo/pdh/actions/workflows/doc-publish.yaml/badge.svg)
+
 
 See [docs](./docs)
 

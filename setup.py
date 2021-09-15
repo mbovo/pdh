@@ -14,7 +14,7 @@ with open("version", "r") as f:
     version = f.read()
 
 setuptools.setup(
-    name="cloudtools",
+    name="pdh",
     version=version,
     author="Manuel Bovo",
     author_email="manuel.bovo@gmail.com",
@@ -33,7 +33,7 @@ setuptools.setup(
     python_requires=">=3.9",
     entry_points={
         "console_scripts": [
-            "pdh=pd.main:main",
+            "pdh=pdh.main:main",
         ]
     },
 )
