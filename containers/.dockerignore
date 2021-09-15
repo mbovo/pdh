@@ -1,0 +1,6 @@
+Dockerfile
+venv
+.github
+jenkins
+tests
+.task/*

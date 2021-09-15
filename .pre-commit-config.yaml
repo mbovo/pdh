@@ -1,0 +1,40 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+  - repo: https://github.com/psf/black
+    rev: 21.7b0
+    hooks:
+      - id: black
+  - repo: https://github.com/hadolint/hadolint
+    rev: "v2.6.0"
+    hooks:
+      - id: hadolint-docker
+        args:
+          - --ignore
+          - DL4006
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+      - id: flake8
+        args:
+          - --count
+          - --select=E9,F63,F7,F82
+          - --show-source
+          - --statistics
+      - id: flake8
+        args:
+          - --count
+          - --exit-zero
+          - --max-complexity=10
+          - --max-line-length=127
+          - --statistics

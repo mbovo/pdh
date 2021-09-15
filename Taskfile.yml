@@ -1,0 +1,76 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  IMAGE_NAME: jackbit/pd
+
+
+tasks:
+  default:
+    cmds:
+      - task -l
+    silent: true
+
+  check:
+    desc: Run all pre-commit hooks
+    cmds:
+      - pre-commit run -a
+
+  virtualenv:
+    cmds:
+      - python3 -m venv .venv
+    sources:
+      - .venv/bin/activate
+    generates:
+      - .venv/bin/activate
+    method: checksum
+
+  install-pip:
+    cmds:
+      - |
+        source .venv/bin/activate
+        pip install --upgrade pip
+        pip install -e ".[test]"
+    sources:
+      - requirements.txt
+      - test-requirments.txt
+      - version
+    method: checksum
+
+  pre-commit:
+    cmds:
+      - pre-commit install
+    sources:
+      - .git/hooks/pre-commit
+      - .pre-commit-config.yaml
+    generates:
+      - .git/hooks/pre-commit
+    method: checksum
+
+  bootstrap:
+    desc: Bootstrap of dev environment
+    preconditions:
+      - sh: "which pre-commit"
+        msg: "pre-commit not found (https://pre-commit.com)"
+      - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 > 8) }') = 1 ]"
+        msg: "Required python version not found (>=3.6)"
+    cmds:
+      - task: virtualenv
+      - task: install-pip
+      - task: pre-commit
+
+  test:
+    desc: Run python test and coverage
+    cmds:
+      - pytest --cov=cloudtools .
+
+  build:
+    desc: Build docker image
+    cmds:
+      - podman build -t $IMAGE_NAME:local .
+
+  clean:
+    desc: Cleanup docker image
+    cmds:
+      - podman rmi -f $IMAGE_NAME:local

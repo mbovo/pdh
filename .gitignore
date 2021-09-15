@@ -1,0 +1,8 @@
+*.pytest_cache
+.venv
+.vscode
+*.egg-info
+.coverage
+*__pycache__
+runme.sh
+.task/*
