@@ -82,6 +82,7 @@ def version():
 @click.option("-n", "--new", is_flag=True, default=False, help="Filter only newly triggered incident")
 @click.option("-a", "--ack", is_flag=True, default=False, help="Acknowledge incident listed here")
 @click.option("-s", "--snooze", is_flag=True, default=False, help="Snooze for 4 hours incident listed here")
+@click.option("-r", "--resolve", is_flag=True, default=False, help="Resolve the incident listed here")
 @click.option(
     "-o",
     "--output",
@@ -91,7 +92,7 @@ def version():
     type=click.Choice(["table", "yaml", "json", "plain"]),
     default="plain",
 )
-def ls(ctx, mine, user, new, ack, output, snooze):
+def ls(ctx, mine, user, new, ack, output, snooze, resolve):
     pd = PD(ctx.obj)
     incs = []
     status = ["triggered"]
@@ -110,7 +111,6 @@ def ls(ctx, mine, user, new, ack, output, snooze):
         table = Table(show_header=True, header_style="bold magenta")
         for k in ["assignee", "urgency", "title", "url", "status", "pending_action"]:
             table.add_column(k)
-
     if len(incs) > 0:
         for i in incs:
             assignee = pd.get_user_names(i)
@@ -144,10 +144,15 @@ def ls(ctx, mine, user, new, ack, output, snooze):
             if snooze and i["status"] == "acknowledged":
                 pd.session.post(f"/incidents/{i['id']}/snooze", json={"duration": 14400})
 
+            if resolve and i["status"] == "acknowledged":
+                i["status"] = "resolved"
+
             if ack and i["status"] != "acknowledged":
                 i["status"] = "acknowledged"
-        console.print(table)
-        if ack:
+
+        if output == "table":
+            console.print(table)
+        if ack or resolve:
             update = pd.session.rput("incidents", json=incs)
             print(f"[green]ACK for {len(update)} incidents[green]")
 
