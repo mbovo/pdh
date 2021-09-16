@@ -5,9 +5,11 @@ import json
 import os
 import sys
 from rich import print
+from rich.live import Live
 from rich.table import Table
 from rich.console import Console
 from .pd import PD
+import time
 
 VERSION = pkg_resources.get_distribution("pdh").version
 
@@ -90,7 +92,7 @@ def version():
     help="output format",
     required=False,
     type=click.Choice(["table", "yaml", "json", "plain"]),
-    default="plain",
+    default="table",
 )
 def ls(ctx, mine, user, new, ack, output, snooze, resolve):
     pd = PD(ctx.obj)
@@ -106,53 +108,76 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve):
         incs = pd.list_incidents(user, statuses=status)
 
     print(f"[yellow]Found {len(incs)} incidents[/yellow]")
-    if output == "table":
+
+    filtered = [
+        {
+            "id": i["id"],
+            "assignee": pd.get_user_names(i),
+            "urgency": i["urgency"],
+            "title": i["title"],
+            "url": i["html_url"],
+            "status": i["status"],
+            "pending_actions": [f"{a['type']} at {a['at']}" for a in i["pending_actions"]],
+            "created_at": i["created_at"],
+        }
+        for i in incs
+    ]
+
+    if output == "plain":
+        for i in filtered:
+            urgency_c = "cyan"
+            if i["urgency"] == "high":
+                urgency_c = "red"
+            status_c = "green"
+            if i["status"] == "triggered":
+                status_c = "red"
+            print(
+                f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
+            )
+    elif output == "yaml":
+        print(yaml.safe_dump(filtered))
+    elif output == "json":
+        print(json.dumps(filtered))
+    elif output == "table":
         console = Console()
         table = Table(show_header=True, header_style="bold magenta")
-        for k in ["assignee", "urgency", "title", "url", "status", "pending_action"]:
+        for k, _ in filtered[0].items():
             table.add_column(k)
+
+        with Live(table, refresh_per_second=4):
+            for i in filtered:
+                urgency_c = "cyan"
+                if i["urgency"] == "high":
+                    urgency_c = "red"
+                status_c = "yellow"
+                if i["status"] == "triggered":
+                    status_c = "red"
+                table.add_row(
+                    i["id"],
+                    f"[magenta]{i['assignee']}[/magenta]",
+                    f"[{urgency_c}]{i['urgency']}[/{urgency_c}]",
+                    f"[{urgency_c}]{i['title']}[/{urgency_c}]",
+                    f"[{urgency_c}]{i['url']}[/{urgency_c}]",
+                    f"[{status_c}]{i['status']}[/{status_c}]",
+                    "\n".join(i["pending_actions"]),
+                    i["created_at"],
+                )
     if len(incs) > 0:
         for i in incs:
-            assignee = pd.get_user_names(i)
-            pending_actions = "\n".join([f"{a['type']} at {a['at']}" for a in i["pending_actions"]])
-            urgency = "cyan"
-            if i["urgency"] == "high":
-                urgency = "red"
-            status = "green"
-            if i["status"] == "triggered":
-                status = "red"
-            if output == "plain":
-                print(f"[green]{assignee}[/green]  [{urgency}]{i['title']}[/{urgency}] {i['html_url']}")
-            elif output == "yaml":
-                print(
-                    yaml.safe_dump(
-                        {"assignee": assignee, "urgency": i["urgency"], "title": i["title"], "url": i["url"]}
-                    )
-                )
-            elif output == "json":
-                print(json.dumps({"assignee": assignee, "urgency": i["urgency"], "title": i["title"], "url": i["url"]}))
-            elif output == "table":
-                table.add_row(
-                    f"[green]{assignee}[/green]",
-                    f"[{urgency}]{i['urgency']}[/{urgency}]",
-                    f"[{urgency}]{i['title']}[/{urgency}]",
-                    f"[{urgency}]{i['html_url']}[/{urgency}]",
-                    f"[{status}]{i['status']}[/{status}]",
-                    pending_actions,
-                )
-
             if snooze and i["status"] == "acknowledged":
+                print(f"Snoozing incident {i['id']} for 4h")
                 pd.session.post(f"/incidents/{i['id']}/snooze", json={"duration": 14400})
 
             if resolve and i["status"] == "acknowledged":
                 i["status"] = "resolved"
+                print(f"Mark {i['id']} as [green]RESOLVED[/green]")
 
             if ack and i["status"] != "acknowledged":
                 i["status"] = "acknowledged"
+                print(f"Mark {i['id']} as [yellow]ACK[/yellow]")
 
-        if output == "table":
-            console.print(table)
         if ack or resolve:
+            print("Sending bulk updates")
             update = pd.session.rput("incidents", json=incs)
             print(f"[green]ACK for {len(update)} incidents[green]")
 
