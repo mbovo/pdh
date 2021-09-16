@@ -125,6 +125,8 @@ def snooze(ctx, incident, duration):
 @click.option("-r", "--resolve", is_flag=True, default=False, help="Resolve the incident listed here")
 @click.option("-h", "--high", is_flag=True, default=False, help="List only HIGH priority incidents")
 @click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
+@click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
+@click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
 @click.option(
     "-o",
     "--output",
@@ -134,7 +136,7 @@ def snooze(ctx, incident, duration):
     type=click.Choice(["table", "yaml", "json", "plain"]),
     default="table",
 )
-def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low):
+def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, timeout):
     pd = PD(ctx.obj)
     incs = []
     status = ["triggered"]
@@ -147,89 +149,95 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low):
     if not new:
         status.append("acknowledged")
 
-    if mine:
-        incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
-    else:
-        incs = pd.list_incidents(user, statuses=status, urgencies=urgencies)
+    console = Console()
 
-    print(f"[yellow]Found {len(incs)} incidents[/yellow]")
+    while True:
 
-    # Updates
-    if len(incs) > 0:
-        for i in incs:
-            if snooze:
-                print(f"Snoozing incident {i['id']} for 4h")
-                i = pd.snooze(i)
+        if mine:
+            incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
+        else:
+            incs = pd.list_incidents(user, statuses=status, urgencies=urgencies)
 
-            if resolve:
-                i = pd.resolve(i)
-                print(f"Mark {i['id']} as [green]RESOLVED[/green]")
+        print(f"[yellow]Found {len(incs)} incidents[/yellow]")
 
-            if ack:
-                i = pd.ack(i)
-                print(f"Mark {i['id']} as [yellow]ACK[/yellow]")
+        # Updates
+        if len(incs) > 0:
+            for i in incs:
+                if snooze:
+                    print(f"Snoozing incident {i['id']} for 4h")
+                    i = pd.snooze(i)
 
-        if ack or resolve:
-            print("Sending bulk updates")
-            update = pd.bulk_update_incident(incs)
-            print(f"[green]ACK for {len(update)} incidents[green]")
+                if resolve:
+                    i = pd.resolve(i)
+                    print(f"Mark {i['id']} as [green]RESOLVED[/green]")
 
-    else:
-        print(f"[green]:red_heart-emoji: Hooray :red_heart-emoji: No alerts found![/green]")
-        return
+                if ack:
+                    i = pd.ack(i)
+                    print(f"Mark {i['id']} as [yellow]ACK[/yellow]")
 
-    # Build filtered list for output
-    filtered = [
-        {
-            "id": i["id"],
-            "assignee": pd.get_user_names(i),
-            "urgency": i["urgency"],
-            "title": i["title"],
-            "url": i["html_url"],
-            "status": i["status"],
-            "pending_actions": [f"{a['type']} at {a['at']}" for a in i["pending_actions"]],
-            "created_at": i["created_at"],
-        }
-        for i in incs
-    ]
+            if ack or resolve:
+                print("Sending bulk updates")
+                update = pd.bulk_update_incident(incs)
+                print(f"[green]ACK for {len(update)} incidents[green]")
 
-    # OUTPUT
-    if output == "plain":
-        for i in filtered:
-            urgency_c = "cyan"
-            if i["urgency"] == "high":
-                urgency_c = "red"
-            status_c = "green"
-            if i["status"] == "triggered":
-                status_c = "red"
-            print(
-                f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
-            )
-    elif output == "yaml":
-        print(yaml.safe_dump(filtered))
-    elif output == "json":
-        print(json.dumps(filtered))
-    elif output == "table":
-        console = Console()
-        table = Table(show_header=True, header_style="bold magenta")
-        for k, _ in filtered[0].items():
-            table.add_column(k)
+        else:
+            print(f"[green]:red_heart-emoji:  Hooray :red_heart-emoji:  No alerts found![/green]")
 
-        with Live(table, refresh_per_second=4):
+        # Build filtered list for output
+        filtered = [
+            {
+                "id": i["id"],
+                "assignee": pd.get_user_names(i),
+                "urgency": i["urgency"],
+                "title": i["title"],
+                "url": i["html_url"],
+                "status": i["status"],
+                "pending_actions": [f"{a['type']} at {a['at']}" for a in i["pending_actions"]],
+                "created_at": i["created_at"],
+            }
+            for i in incs
+        ]
+
+        # OUTPUT
+        if output == "plain":
             for i in filtered:
                 urgency_c = "cyan"
                 if i["urgency"] == "high":
                     urgency_c = "red"
-                status_c = "yellow"
+                status_c = "green"
                 if i["status"] == "triggered":
                     status_c = "red"
-                table.add_row(
-                    i["id"],
-                    f"[magenta]{i['assignee']}[/magenta]",
-                    f"[{urgency_c}]{i['urgency']}[/{urgency_c}]",
-                    f"[{urgency_c}]{i['title']}[/{urgency_c}]",
-                    f"[{urgency_c}]{i['url']}[/{urgency_c}]",
-                    f"[{status_c}]{i['status']}[/{status_c}]",
-                    "\n".join(i["pending_actions"]),
-                    i["created_at"],
+                print(
+                    f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
                 )
+        elif output == "yaml":
+            print(yaml.safe_dump(filtered))
+        elif output == "json":
+            print(json.dumps(filtered))
+        elif output == "table" and len(filtered) > 0:
+            table = Table(show_header=True, header_style="bold magenta")
+            for k, _ in filtered[0].items():
+                table.add_column(k)
+
+            with Live(table, refresh_per_second=4):
+                for i in filtered:
+                    urgency_c = "cyan"
+                    if i["urgency"] == "high":
+                        urgency_c = "red"
+                    status_c = "yellow"
+                    if i["status"] == "triggered":
+                        status_c = "red"
+                    table.add_row(
+                        i["id"],
+                        f"[magenta]{i['assignee']}[/magenta]",
+                        f"[{urgency_c}]{i['urgency']}[/{urgency_c}]",
+                        f"[{urgency_c}]{i['title']}[/{urgency_c}]",
+                        f"[{urgency_c}]{i['url']}[/{urgency_c}]",
+                        f"[{status_c}]{i['status']}[/{status_c}]",
+                        "\n".join(i["pending_actions"]),
+                        i["created_at"],
+                    )
+        if not watch:
+            break
+        time.sleep(timeout)
+        console.clear()

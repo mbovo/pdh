@@ -1,3 +1,4 @@
+dist/*
 *.pytest_cache
 .venv
 .vscode

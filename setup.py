@@ -21,6 +21,8 @@ setuptools.setup(
     description="PagerDuty cli for humans",
     long_description=long_description,
     url="",
+    package_data={"": ["*.txt"]},
+    include_package_data=True,
     install_requires=requires,
     extras_require={
         "test": test_requires,
