@@ -77,6 +77,44 @@ def version():
     click.echo(f"v{VERSION}")
 
 
+@pd.command(help="Acknowledge specific incidents IDs")
+@click.pass_context
+@click.argument("incident", nargs=-1)
+def ack(ctx, incident):
+    pd = PD(ctx.obj)
+    for id in incident:
+        i = pd.get_incident(id)
+        pd.ack(i)
+        print(f"Mark {i['id']} [cyan]{i['title']}[/cyan] as [yellow]ACK[/yellow]")
+        pd.update_incident(i)
+
+
+@pd.command(help="Resolve specific incidents IDs")
+@click.pass_context
+@click.argument("incident", nargs=-1)
+def resolve(ctx, incident):
+    pd = PD(ctx.obj)
+    for id in incident:
+        i = pd.get_incident(id)
+        pd.resolve(i)
+        print(f"Mark {i['id']} [cyan]{i['title']}[/cyan] as [green]RESOLVED[/green]")
+        pd.update_incident(i)
+
+
+@pd.command(help="Snooze the incident(s) for the specified duration in seconds")
+@click.pass_context
+@click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
+@click.argument("incident", nargs=-1)
+def snooze(ctx, incident, duration):
+    pd = PD(ctx.obj)
+    import datetime
+
+    for id in incident:
+        i = pd.get_incident(id)
+        print(f"Snoozing incident {i['id']} for { str(datetime.timedelta(seconds=duration))}")
+        pd.snooze(i, duration)
+
+
 @pd.command(help="List incidents")
 @click.pass_context
 @click.option("-m", "--mine", help="Filter only mine incidents", is_flag=True, default=False)
@@ -85,6 +123,8 @@ def version():
 @click.option("-a", "--ack", is_flag=True, default=False, help="Acknowledge incident listed here")
 @click.option("-s", "--snooze", is_flag=True, default=False, help="Snooze for 4 hours incident listed here")
 @click.option("-r", "--resolve", is_flag=True, default=False, help="Resolve the incident listed here")
+@click.option("-h", "--high", is_flag=True, default=False, help="List only HIGH priority incidents")
+@click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
 @click.option(
     "-o",
     "--output",
@@ -94,21 +134,51 @@ def version():
     type=click.Choice(["table", "yaml", "json", "plain"]),
     default="table",
 )
-def ls(ctx, mine, user, new, ack, output, snooze, resolve):
+def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low):
     pd = PD(ctx.obj)
     incs = []
     status = ["triggered"]
+    urgencies = ["high", "low"]
+    if high:
+        urgencies = ["high"]
+    if low:
+        urgencies = ["low"]
 
     if not new:
         status.append("acknowledged")
 
     if mine:
-        incs = pd.list_my_incidents(statuses=status)
+        incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
     else:
-        incs = pd.list_incidents(user, statuses=status)
+        incs = pd.list_incidents(user, statuses=status, urgencies=urgencies)
 
     print(f"[yellow]Found {len(incs)} incidents[/yellow]")
 
+    # Updates
+    if len(incs) > 0:
+        for i in incs:
+            if snooze:
+                print(f"Snoozing incident {i['id']} for 4h")
+                i = pd.snooze(i)
+
+            if resolve:
+                i = pd.resolve(i)
+                print(f"Mark {i['id']} as [green]RESOLVED[/green]")
+
+            if ack:
+                i = pd.ack(i)
+                print(f"Mark {i['id']} as [yellow]ACK[/yellow]")
+
+        if ack or resolve:
+            print("Sending bulk updates")
+            update = pd.bulk_update_incident(incs)
+            print(f"[green]ACK for {len(update)} incidents[green]")
+
+    else:
+        print(f"[green]:red_heart-emoji: Hooray :red_heart-emoji: No alerts found![/green]")
+        return
+
+    # Build filtered list for output
     filtered = [
         {
             "id": i["id"],
@@ -123,6 +193,7 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve):
         for i in incs
     ]
 
+    # OUTPUT
     if output == "plain":
         for i in filtered:
             urgency_c = "cyan"
@@ -162,24 +233,3 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve):
                     "\n".join(i["pending_actions"]),
                     i["created_at"],
                 )
-    if len(incs) > 0:
-        for i in incs:
-            if snooze and i["status"] == "acknowledged":
-                print(f"Snoozing incident {i['id']} for 4h")
-                pd.session.post(f"/incidents/{i['id']}/snooze", json={"duration": 14400})
-
-            if resolve and i["status"] == "acknowledged":
-                i["status"] = "resolved"
-                print(f"Mark {i['id']} as [green]RESOLVED[/green]")
-
-            if ack and i["status"] != "acknowledged":
-                i["status"] = "acknowledged"
-                print(f"Mark {i['id']} as [yellow]ACK[/yellow]")
-
-        if ack or resolve:
-            print("Sending bulk updates")
-            update = pd.session.rput("incidents", json=incs)
-            print(f"[green]ACK for {len(update)} incidents[green]")
-
-    else:
-        print(f"[green]:red_heart-emoji: Hooray :red_heart-emoji: No alerts found![/green]")
