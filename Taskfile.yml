@@ -65,10 +65,15 @@ tasks:
     cmds:
       - pytest --cov=pdh .
 
-  build:
+  docker-build:
     desc: Build docker image
     cmds:
       - docker build -t $IMAGE_NAME:local -f containers/Dockerfile .
+
+  build:
+    desc: "Build python wheel"
+    cmds:
+      - python3 -m build
 
   clean:
     desc: Cleanup docker image
