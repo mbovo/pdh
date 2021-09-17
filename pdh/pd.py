@@ -63,6 +63,11 @@ class PD(object):
     def bulk_update_incident(self, incs):
         return self.session.rput("incidents", json=incs)
 
+    def get_user_by(self, query: str, attribute: str = "name") -> List:
+        equiv = lambda s: query.lower() in s[attribute].lower()
+        users = [u for u in filter(equiv, self.session.iter_all("users"))]
+        return users
+
     def get_userID_by(self, query: str, attribute: str = "name") -> List[str]:
         equiv = lambda s: query.lower() in s[attribute].lower()
         user = [u["id"] for u in filter(equiv, self.session.iter_all("users"))]

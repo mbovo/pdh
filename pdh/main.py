@@ -43,7 +43,12 @@ def config(config):
         yaml.safe_dump(cfg, f)
 
 
-@main.group(help="Pagerduty comands")
+@main.command(help="Print cloud tools version and exit")
+def version():
+    click.echo(f"v{VERSION}")
+
+
+@main.group(help="Operater on Users")
 @click.option(
     "-c",
     "--config",
@@ -60,7 +65,7 @@ def config(config):
     help="Configuration file location (default: ~/.config/pdh.yaml)",
 )
 @click.pass_context
-def pd(ctx, config):
+def user(ctx, config):
     cfg = None
     try:
         with open(os.path.expandvars(config), "r") as f:
@@ -72,12 +77,78 @@ def pd(ctx, config):
         sys.exit(1)
 
 
-@main.command(help="Print cloud tools version and exit")
-def version():
-    click.echo(f"v{VERSION}")
+@user.command(help="Operate on users", name="get")
+@click.pass_context
+@click.argument("user")
+@click.option(
+    "-o",
+    "--output",
+    "output",
+    help="output format",
+    required=False,
+    type=click.Choice(["table", "yaml", "json", "plain"]),
+    default="table",
+)
+def user_get(ctx, user, output):
+    pd = PD(ctx.obj)
+    users = pd.get_user_by(user)
+    filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
+
+    if output == "plain":
+        for i in filtered:
+            urgency_c = "cyan"
+            if i["urgency"] == "high":
+                urgency_c = "red"
+            status_c = "green"
+            if i["status"] == "triggered":
+                status_c = "red"
+            print(
+                f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
+            )
+    elif output == "yaml":
+        print(yaml.safe_dump(filtered))
+    elif output == "json":
+        print(json.dumps(filtered))
+    elif output == "table" and len(filtered) > 0:
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
+        for k, _ in filtered[0].items():
+            table.add_column(k)
+        for u in filtered:
+            table.add_row(u["id"], u["name"], u["email"], u["time_zone"])
+        console.print(table)
 
 
-@pd.command(help="Acknowledge specific incidents IDs")
+@main.group(help="Operater on Incidents")
+@click.option(
+    "-c",
+    "--config",
+    envvar="PDH_CONFIG",
+    default="./pdh.yaml",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        resolve_path=True,
+        readable=True,
+        writable=True,
+    ),
+    help="Configuration file location (default: ~/.config/pdh.yaml)",
+)
+@click.pass_context
+def inc(ctx, config):
+    cfg = None
+    try:
+        with open(os.path.expandvars(config), "r") as f:
+            cfg = yaml.safe_load(f.read())
+        ctx.ensure_object(dict)
+        ctx.obj = cfg
+    except FileNotFoundError as e:
+        print(f"[red]{e}[/red]")
+        sys.exit(1)
+
+
+@inc.command(help="Acknowledge specific incidents IDs")
 @click.pass_context
 @click.argument("incident", nargs=-1)
 def ack(ctx, incident):
@@ -89,7 +160,7 @@ def ack(ctx, incident):
         pd.update_incident(i)
 
 
-@pd.command(help="Resolve specific incidents IDs")
+@inc.command(help="Resolve specific incidents IDs")
 @click.pass_context
 @click.argument("incident", nargs=-1)
 def resolve(ctx, incident):
@@ -101,7 +172,7 @@ def resolve(ctx, incident):
         pd.update_incident(i)
 
 
-@pd.command(help="Snooze the incident(s) for the specified duration in seconds")
+@inc.command(help="Snooze the incident(s) for the specified duration in seconds")
 @click.pass_context
 @click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
 @click.argument("incident", nargs=-1)
@@ -115,7 +186,7 @@ def snooze(ctx, incident, duration):
         pd.snooze(i, duration)
 
 
-@pd.command(help="Re-assign the incident(s) to the specified user")
+@inc.command(help="Re-assign the incident(s) to the specified user")
 @click.pass_context
 @click.option("-u", "--user", required=True, help="User name or email to assign to (fuzzy find!)")
 @click.argument("incident", nargs=-1)
@@ -132,15 +203,7 @@ def reassign(ctx, incident, user):
         print(pd.reassign(i, users))
 
 
-@pd.command(help="")
-@click.pass_context
-@click.argument("user")
-def user(ctx, user):
-    pd = PD(ctx.obj)
-    print(pd.get_userID_by_name(user))
-
-
-@pd.command(help="List incidents")
+@inc.command(help="List incidents")
 @click.pass_context
 @click.option("-m", "--mine", help="Filter only mine incidents", is_flag=True, default=False)
 @click.option("-u", "--user", default=None, help="Filter only incidents assigned to this user ID")
