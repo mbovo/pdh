@@ -62,3 +62,21 @@ class PD(object):
 
     def bulk_update_incident(self, incs):
         return self.session.rput("incidents", json=incs)
+
+    def get_userID_by(self, query: str, attribute: str = "name") -> List[str]:
+        equiv = lambda s: query.lower() in s[attribute].lower()
+        user = [u["id"] for u in filter(equiv, self.session.iter_all("users"))]
+        return user
+
+    def get_userID_by_email(self, query):
+        return self.get_userID_by(query, "email")
+
+    def get_userID_by_name(self, query):
+        return self.get_userID_by(query, "name")
+
+    def reassign(self, inc, users: List[str]):
+        ass = []
+        for user in users:
+            ass.append({"assignee": {"id": user, "type": "user_reference"}})
+        i = {"incident": {"assignments": ass}}
+        return self.session.rput(f"/incidents/{inc['id']}", json=inc)

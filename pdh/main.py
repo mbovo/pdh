@@ -115,6 +115,31 @@ def snooze(ctx, incident, duration):
         pd.snooze(i, duration)
 
 
+@pd.command(help="Re-assign the incident(s) to the specified user")
+@click.pass_context
+@click.option("-u", "--user", required=True, help="User name or email to assign to (fuzzy find!)")
+@click.argument("incident", nargs=-1)
+def reassign(ctx, incident, user):
+    pd = PD(ctx.obj)
+
+    users = pd.get_userID_by_name(user)
+    if users is None or len(users) == 0:
+        users = pd.get_userID_by_email(user)
+
+    for id in incident:
+        i = pd.get_incident(id)
+        print(f"Reassign incident {i['id']} to {users}")
+        print(pd.reassign(i, users))
+
+
+@pd.command(help="")
+@click.pass_context
+@click.argument("user")
+def user(ctx, user):
+    pd = PD(ctx.obj)
+    print(pd.get_userID_by_name(user))
+
+
 @pd.command(help="List incidents")
 @click.pass_context
 @click.option("-m", "--mine", help="Filter only mine incidents", is_flag=True, default=False)
@@ -151,12 +176,16 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, tim
 
     console = Console()
 
+    userid = None
+    if user:
+        userid = pd.get_userID_by_name(user)
+
     while True:
 
         if mine:
             incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
         else:
-            incs = pd.list_incidents(user, statuses=status, urgencies=urgencies)
+            incs = pd.list_incidents(userid, statuses=status, urgencies=urgencies)
 
         print(f"[yellow]Found {len(incs)} incidents[/yellow]")
 
