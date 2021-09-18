@@ -273,7 +273,7 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, tim
                 print(f"[green]ACK for {len(update)} incidents[green]")
 
         else:
-            print(f"[green]:red_heart-emoji:  Hooray :red_heart-emoji:  No alerts found![/green]")
+            print("[green]:red_heart-emoji:  Hooray :red_heart-emoji:  No alerts found![/green]")
 
         # Build filtered list for output
         filtered = [
