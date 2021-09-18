@@ -48,15 +48,27 @@ tasks:
       - .git/hooks/pre-commit
     method: checksum
 
+  pre-commit-setup:
+    cmds:
+      - pip3 install pre-commit
+    status:
+      - which pre-commit
+
+  poetry-setup:
+    cmds:
+      - pip3 install poetry
+    status:
+      - which poetry
+
   bootstrap:
     desc: Bootstrap of dev environment
     preconditions:
-      - sh: "which pre-commit"
-        msg: "pre-commit not found (https://pre-commit.com)"
       - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 > 8) }') = 1 ]"
-        msg: "Required python version not found (>=3.6)"
+        msg: "Required python version not found (>=3.8)"
     cmds:
-      - task: virtualenv
+      - task: pre-commit-setup
+      - task: poetry-setup
+      - task: virtualenv  
       - task: install-pip
       - task: pre-commit
 
