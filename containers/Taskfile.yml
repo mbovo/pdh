@@ -1,0 +1,22 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  IMAGE_NAME: jackbit/pd
+
+tasks:
+  default:
+    cmds:
+      - task -l
+    silent: true
+
+  build:
+    desc: Build docker image
+    cmds:
+      - docker build -t $IMAGE_NAME:local -f containers/Dockerfile .
+
+  clean:
+    desc: Cleanup docker image
+    cmds:
+      - docker rmi -f $IMAGE_NAME:local

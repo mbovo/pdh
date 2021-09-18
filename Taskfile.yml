@@ -2,9 +2,8 @@
 
 version: '3'
 
-env:
-  IMAGE_NAME: jackbit/pd
-
+includes:
+  docker: containers/Taskfile.yml
 
 tasks:
   default:
@@ -24,18 +23,6 @@ tasks:
       - .venv/bin/activate
     generates:
       - .venv/bin/activate
-    method: checksum
-
-  install-pip:
-    cmds:
-      - |
-        source .venv/bin/activate
-        pip install --upgrade pip
-        pip install -e ".[test]"
-    sources:
-      - requirements.txt
-      - test-requirments.txt
-      - version
     method: checksum
 
   pre-commit:
@@ -60,34 +47,40 @@ tasks:
     status:
       - which poetry
 
-  bootstrap:
-    desc: Bootstrap of dev environment
+  dependency-install:
+    cmds:
+      - source .venv/bin/activate
+      - poetry install
+    sources:
+      - poetry.lock
+      - pyproject.toml
+    generates:
+      - poetry.lock
+    method: checksum
+
+  setup:
+    desc: Bootstrap dev environment
     preconditions:
       - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 > 8) }') = 1 ]"
         msg: "Required python version not found (>=3.8)"
     cmds:
       - task: pre-commit-setup
       - task: poetry-setup
-      - task: virtualenv  
-      - task: install-pip
+      - task: virtualenv
       - task: pre-commit
+      - task: dependency-install
 
   test:
     desc: Run python test and coverage
     cmds:
       - pytest --cov=pdh .
 
-  docker-build:
-    desc: Build docker image
-    cmds:
-      - docker build -t $IMAGE_NAME:local -f containers/Dockerfile .
-
   build:
     desc: "Build python wheel"
     cmds:
-      - python3 -m build
+      - echo "todo"
 
   clean:
-    desc: Cleanup docker image
+    desc: Cleanup
     cmds:
-      - docker rmi -f $IMAGE_NAME:local
+      - rm -rf ./dist
