@@ -1,7 +1,7 @@
 FROM python:3.9-slim as builder
 WORKDIR /app
 COPY . /app/
-RUN apt-get update && apt-get install -y curl==* \
+RUN apt-get update && apt-get install -y curl=* \
   && sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d \
   && pip install --no-cache-dir poetry==1.1.9 \
   && ./bin/task build
