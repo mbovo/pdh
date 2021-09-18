@@ -21,6 +21,8 @@ repos:
         args:
           - --ignore
           - DL4006
+          - --ignore
+          - DL3015
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
