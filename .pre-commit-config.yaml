@@ -11,7 +11,7 @@ repos:
       - id: check-symlinks
       - id: detect-private-key
   - repo: https://github.com/psf/black
-    rev: 21.7b0
+    rev: 21.9b0
     hooks:
       - id: black
   - repo: https://github.com/hadolint/hadolint
@@ -21,6 +21,8 @@ repos:
         args:
           - --ignore
           - DL4006
+          - --ignore
+          - DL3015
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
@@ -31,10 +33,11 @@ repos:
           - --select=E9,F63,F7,F82
           - --show-source
           - --statistics
+          - --ignore=E203
       - id: flake8
         args:
           - --count
-          - --exit-zero
           - --max-complexity=10
-          - --max-line-length=127
+          - --max-line-length=150
           - --statistics
+          - --ignore=E203,C901,E731

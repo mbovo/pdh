@@ -1,2 +1,40 @@
 [tool.black]
 line-length = 120
+
+[tool.flake8]
+max-line-length = 120
+ignore = "E203"
+
+
+[tool.poetry]
+name = "pdh"
+version = "0.1.0"
+description = "Pagerduty CLI for Humans"
+authors = ["Manuel Bovo <manuel.bovo@gmail.com>"]
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.0.1"
+colorama = "^0.4.4"
+pdpyras = "^4.3.0"
+rich = "^10.10.0"
+PyYAML = "^5.4.1"
+types-setuptools = "^57.0.2"
+
+
+[tool.poetry.dev-dependencies]
+black = "^21.9b0"
+pytest = "^6.2.5"
+pytest-cov = "^2.12.1"
+pytest-xdist = "^2.3.0"
+pytest-flake8 = "^1.0.7"
+pytest-pylint = "^0.18.0"
+mypy = "^0.910"
+
+[tool.poetry.scripts]
+pdh = "pdh.main:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

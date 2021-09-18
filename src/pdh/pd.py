@@ -39,8 +39,7 @@ class PD(object):
 
     def get_incident(self, id: str) -> dict:
         r = self.session.rget(f"/incidents/{id}")
-        if r:
-            return r
+        return r
 
     def ack(self, inc):
         if inc["status"] != "acknowledged":
@@ -84,4 +83,4 @@ class PD(object):
         for user in users:
             ass.append({"assignee": {"id": user, "type": "user_reference"}})
         i = {"incident": {"assignments": ass}}
-        return self.session.rput(f"/incidents/{inc['id']}", json=inc)
+        return self.session.rput(f"/incidents/{inc['id']}", json=i)
