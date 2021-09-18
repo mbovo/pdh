@@ -84,3 +84,8 @@ tasks:
     desc: Cleanup
     cmds:
       - rm -rf ./dist
+
+  reset:
+    desc: Reset dev environment
+    cmds:
+      - rm -rf .venv .task
