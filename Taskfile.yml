@@ -78,7 +78,7 @@ tasks:
   build:
     desc: "Build python wheel"
     cmds:
-      - echo "todo"
+      - poetry build
 
   clean:
     desc: Cleanup
