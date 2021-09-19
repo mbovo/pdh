@@ -2,19 +2,17 @@ import click
 import pkg_resources
 import yaml
 import json
-import os
 import sys
 from rich import print
 from rich.live import Live
 from rich.table import Table
 from rich.console import Console
-from .pd import PD
+from .pd import PD, UnauthorizedException
 import time
+from .config import load_and_validate, setup_config
 
-VERSION = pkg_resources.get_distribution("pdh").version
 
-
-@click.group()
+@click.group(help="PDH - PagerDuty for Humans")
 def main():
     pass
 
@@ -23,29 +21,16 @@ def main():
 @click.option(
     "-c",
     "--config",
-    default="./pdh.yaml",
-    type=click.Path(
-        file_okay=True,
-        dir_okay=False,
-        resolve_path=True,
-        readable=True,
-        writable=True,
-    ),
+    default="~/.config/pdh.yaml",
     help="Configuration file location (default: ~/.config/pdh.yaml)",
 )
 def config(config):
-    path = os.path.expanduser(config)
-    with open(path, "w") as f:
-        cfg = {}
-        cfg["apikey"] = input("Add Pagerduty API_KEY: ")
-        cfg["uid"] = input("Add Pagerduty UserID: ")
-        cfg["email"] = input("Add Pagerduty email: ")
-        yaml.safe_dump(cfg, f)
+    setup_config(config)
 
 
 @main.command(help="Print cloud tools version and exit")
 def version():
-    click.echo(f"v{VERSION}")
+    click.echo(f"v{pkg_resources.get_distribution('pdh').version}")
 
 
 @main.group(help="Operater on Users")
@@ -53,28 +38,14 @@ def version():
     "-c",
     "--config",
     envvar="PDH_CONFIG",
-    default="./pdh.yaml",
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=False,
-        resolve_path=True,
-        readable=True,
-        writable=True,
-    ),
+    default="~/.config/pdh.yaml",
     help="Configuration file location (default: ~/.config/pdh.yaml)",
 )
 @click.pass_context
 def user(ctx, config):
-    cfg = None
-    try:
-        with open(os.path.expandvars(config), "r") as f:
-            cfg = yaml.safe_load(f.read())
-        ctx.ensure_object(dict)
-        ctx.obj = cfg
-    except FileNotFoundError as e:
-        print(f"[red]{e}[/red]")
-        sys.exit(1)
+    cfg = load_and_validate(config)
+    ctx.ensure_object(dict)
+    ctx.obj = cfg
 
 
 @user.command(help="Operate on users", name="get")
@@ -90,7 +61,12 @@ def user(ctx, config):
     default="table",
 )
 def user_get(ctx, user, output):
-    pd = PD(ctx.obj)
+    try:
+        pd = PD(ctx.obj)
+    except UnauthorizedException as e:
+        print(f"[red]{e}[/red]")
+        sys.exit(1)
+
     users = pd.get_user_by(user)
     filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
 
@@ -124,28 +100,14 @@ def user_get(ctx, user, output):
     "-c",
     "--config",
     envvar="PDH_CONFIG",
-    default="./pdh.yaml",
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=False,
-        resolve_path=True,
-        readable=True,
-        writable=True,
-    ),
+    default="~/.config/pdh.yaml",
     help="Configuration file location (default: ~/.config/pdh.yaml)",
 )
 @click.pass_context
 def inc(ctx, config):
-    cfg = None
-    try:
-        with open(os.path.expandvars(config), "r") as f:
-            cfg = yaml.safe_load(f.read())
-        ctx.ensure_object(dict)
-        ctx.obj = cfg
-    except FileNotFoundError as e:
-        print(f"[red]{e}[/red]")
-        sys.exit(1)
+    cfg = load_and_validate(config)
+    ctx.ensure_object(dict)
+    ctx.obj = cfg
 
 
 @inc.command(help="Acknowledge specific incidents IDs")

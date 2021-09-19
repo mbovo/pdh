@@ -1,5 +1,10 @@
 from typing import List
-from pdpyras import APISession
+from pdpyras import APISession, PDClientError
+
+
+class UnauthorizedException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
 
 class PD(object):
@@ -12,6 +17,10 @@ class PD(object):
         if not self.session:
             self.cfg = cfg
             self.session = APISession(cfg["apikey"], default_from=cfg["email"])
+            try:
+                self.session.get("/users/me")
+            except PDClientError as e:
+                raise UnauthorizedException(str(e))
 
     def list_incidents(
         self, userid: list = None, statuses: list = ["triggered", "acknowledged"], urgencies: list = ["high", "low"]
