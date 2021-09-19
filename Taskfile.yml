@@ -80,6 +80,13 @@ tasks:
     cmds:
       - poetry build
 
+  publish:
+    desc: "Publish wheel to pypi"
+    cmds:
+      - poetry publish -u $PYPI_USERNAME -p $PYPI_TOKEN
+    deps:
+      - build
+
   clean:
     desc: Cleanup
     cmds:
