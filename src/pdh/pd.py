@@ -27,16 +27,6 @@ class PD(object):
     def list_my_incidents(self, statuses: list = ["triggered", "acknowledged"], urgencies: list = ["high", "low"]):
         return self.list_incidents([self.cfg["uid"]], statuses, urgencies)
 
-    def get_user_names(self, incident: dict) -> List[str]:
-
-        assignments = incident["assignments"]
-
-        users = list()
-        for a in assignments:
-            users.append(a["assignee"]["summary"])
-
-        return users
-
     def get_incident(self, id: str) -> dict:
         r = self.session.rget(f"/incidents/{id}")
         return r
@@ -82,5 +72,6 @@ class PD(object):
         ass = []
         for user in users:
             ass.append({"assignee": {"id": user, "type": "user_reference"}})
-        i = {"incident": {"assignments": ass}}
-        return self.session.rput(f"/incidents/{inc['id']}", json=i)
+
+        inc["assignments"] = ass
+        return self.session.rput(f"/incidents/{inc['id']}", json=inc)

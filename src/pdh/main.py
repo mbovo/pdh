@@ -279,7 +279,7 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, tim
         filtered = [
             {
                 "id": i["id"],
-                "assignee": pd.get_user_names(i),
+                "assignee": [a["assignee"]["summary"] for a in i["assignments"]],
                 "urgency": i["urgency"],
                 "title": i["title"],
                 "url": i["html_url"],
