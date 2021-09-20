@@ -1,5 +1,10 @@
 from typing import List
-from pdpyras import APISession
+from pdpyras import APISession, PDClientError
+
+
+class UnauthorizedException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
 
 class PD(object):
@@ -12,6 +17,10 @@ class PD(object):
         if not self.session:
             self.cfg = cfg
             self.session = APISession(cfg["apikey"], default_from=cfg["email"])
+            try:
+                self.session.get("/users/me")
+            except PDClientError as e:
+                raise UnauthorizedException(str(e))
 
     def list_incidents(
         self, userid: list = None, statuses: list = ["triggered", "acknowledged"], urgencies: list = ["high", "low"]
@@ -26,16 +35,6 @@ class PD(object):
 
     def list_my_incidents(self, statuses: list = ["triggered", "acknowledged"], urgencies: list = ["high", "low"]):
         return self.list_incidents([self.cfg["uid"]], statuses, urgencies)
-
-    def get_user_names(self, incident: dict) -> List[str]:
-
-        assignments = incident["assignments"]
-
-        users = list()
-        for a in assignments:
-            users.append(a["assignee"]["summary"])
-
-        return users
 
     def get_incident(self, id: str) -> dict:
         r = self.session.rget(f"/incidents/{id}")
@@ -82,5 +81,6 @@ class PD(object):
         ass = []
         for user in users:
             ass.append({"assignee": {"id": user, "type": "user_reference"}})
-        i = {"incident": {"assignments": ass}}
-        return self.session.rput(f"/incidents/{inc['id']}", json=i)
+
+        inc["assignments"] = ass
+        return self.session.rput(f"/incidents/{inc['id']}", json=inc)

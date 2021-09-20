@@ -28,6 +28,23 @@ jobs:
       - run: |
           echo Calculated Next Tag is ${{ steps.tag_version.outputs.new_tag }}
   build:
+    name: "Build & Push wheel"
+    runs-on: ubuntu-latest
+    needs:
+      - pre-commit
+      - tagging
+    env:
+      PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: arduino/setup-task@v1
+      - run: task setup
+      - run: task build
+      - run: task publish
+
+  docker-build:
     name: "Build docker image"
     runs-on: ubuntu-latest
     needs:
