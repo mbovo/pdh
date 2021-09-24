@@ -9,7 +9,6 @@ CONFIG_KEYS = ["apikey", "uid", "email"]
 def load_yaml(fileName: str) -> dict:
     cfg = {}
     p = os.path.expanduser(fileName)
-    print(p)
     try:
         with open(p, "r") as f:
             cfg = yaml.safe_load(f.read())
