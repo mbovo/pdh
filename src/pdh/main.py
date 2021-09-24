@@ -167,7 +167,7 @@ def reassign(ctx, incident, user):
 
 @inc.command(help="List incidents")
 @click.pass_context
-@click.option("-m", "--mine", help="Filter only mine incidents", is_flag=True, default=False)
+@click.option("-e", "--everything", help="List all incidents not only assigned to me", is_flag=True, default=False)
 @click.option("-u", "--user", default=None, help="Filter only incidents assigned to this user ID")
 @click.option("-n", "--new", is_flag=True, default=False, help="Filter only newly triggered incident")
 @click.option("-a", "--ack", is_flag=True, default=False, help="Acknowledge incident listed here")
@@ -186,7 +186,7 @@ def reassign(ctx, incident, user):
     type=click.Choice(["table", "yaml", "json", "plain"]),
     default="table",
 )
-def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, timeout):
+def ls(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout):
     pd = PD(ctx.obj)
     incs = []
     status = ["triggered"]
@@ -207,12 +207,10 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, tim
 
     while True:
 
-        if mine:
-            incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
-        else:
+        if everything or userid:
             incs = pd.list_incidents(userid, statuses=status, urgencies=urgencies)
-
-        print(f"[yellow]Found {len(incs)} incidents[/yellow]")
+        else:
+            incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
 
         # Updates
         if len(incs) > 0:
@@ -235,7 +233,8 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, tim
                 print(f"[green]ACK for {len(update)} incidents[green]")
 
         else:
-            print("[green]:red_heart-emoji:  Hooray :red_heart-emoji:  No alerts found![/green]")
+            if output not in ["yaml", "json"]:
+                print("[green]:red_heart-emoji:  Hooray :red_heart-emoji:  No alerts found![/green]")
 
         # Build filtered list for output
         filtered = [
@@ -269,6 +268,7 @@ def ls(ctx, mine, user, new, ack, output, snooze, resolve, high, low, watch, tim
         elif output == "json":
             print(json.dumps(filtered))
         elif output == "table" and len(filtered) > 0:
+            print(f"[yellow]Found {len(incs)} incidents[/yellow]")
             table = Table(show_header=True, header_style="bold magenta")
             for k, _ in filtered[0].items():
                 table.add_column(k)
