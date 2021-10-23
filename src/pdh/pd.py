@@ -78,9 +78,13 @@ class PD(object):
         return self.get_userID_by(query, "name")
 
     def reassign(self, inc, users: List[str]):
-        ass = []
+        assignments = []
         for user in users:
-            ass.append({"assignee": {"id": user, "type": "user_reference"}})
+            assignments.append({"assignee": {"id": user, "type": "user_reference"}})
 
-        inc["assignments"] = ass
-        return self.session.rput(f"/incidents/{inc['id']}", json=inc)
+        new_inc = {
+            "id": inc["id"],
+            "type": "incident_reference",
+            "assignments": assignments,
+        }
+        return self.session.rput(f"/incidents/{inc['id']}", json=new_inc)
