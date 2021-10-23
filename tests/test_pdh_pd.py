@@ -6,6 +6,7 @@ from pdh import pd
 
 @pytest.fixture
 def config() -> dict():
+    # This is the test token from https://developer.pagerduty.com/api-reference
     return {"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@domain.tld", "uid": "UID123"}
 
 

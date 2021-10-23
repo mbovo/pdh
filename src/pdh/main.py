@@ -7,9 +7,11 @@ from rich import print
 from rich.live import Live
 from rich.table import Table
 from rich.console import Console
-from .pd import PD, UnauthorizedException
+from .pd import PD, User, UnauthorizedException
 import time
 from .config import load_and_validate, setup_config
+
+VALID_OUTPUTS = ("plain", "table", "json", "yaml")
 
 
 @click.group(help="PDH - PagerDuty for Humans")
@@ -48,6 +50,26 @@ def user(ctx, config):
     ctx.obj = cfg
 
 
+@user.command(help="List users", name="ls")
+@click.pass_context
+@click.option(
+    "-o",
+    "--output",
+    "output",
+    help="output format",
+    required=False,
+    type=click.Choice(VALID_OUTPUTS),
+    default="table",
+)
+def user_list(ctx, output):
+    try:
+        pd = PD(ctx.obj)
+    except UnauthorizedException as e:
+        print(f"[red]{e}[/red]")
+        sys.exit(1)
+    print_items(User(pd).list(), output)
+
+
 @user.command(help="Operate on users", name="get")
 @click.pass_context
 @click.argument("user")
@@ -57,7 +79,7 @@ def user(ctx, config):
     "output",
     help="output format",
     required=False,
-    type=click.Choice(["table", "yaml", "json", "plain"]),
+    type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
 def user_get(ctx, user, output):
@@ -70,29 +92,7 @@ def user_get(ctx, user, output):
     users = pd.get_user_by(user)
     filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
 
-    if output == "plain":
-        for i in filtered:
-            urgency_c = "cyan"
-            if i["urgency"] == "high":
-                urgency_c = "red"
-            status_c = "green"
-            if i["status"] == "triggered":
-                status_c = "red"
-            print(
-                f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
-            )
-    elif output == "yaml":
-        print(yaml.safe_dump(filtered))
-    elif output == "json":
-        print(json.dumps(filtered))
-    elif output == "table" and len(filtered) > 0:
-        console = Console()
-        table = Table(show_header=True, header_style="bold magenta")
-        for k, _ in filtered[0].items():
-            table.add_column(k)
-        for u in filtered:
-            table.add_row(u["id"], u["name"], u["email"], u["time_zone"])
-        console.print(table)
+    print_items(filtered, output)
 
 
 @main.group(help="Operater on Incidents")
@@ -183,7 +183,7 @@ def reassign(ctx, incident, user):
     "output",
     help="output format",
     required=False,
-    type=click.Choice(["table", "yaml", "json", "plain"]),
+    type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
 def ls(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout):
@@ -295,3 +295,29 @@ def ls(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watc
             break
         time.sleep(timeout)
         console.clear()
+
+
+def print_items(items, output) -> None:
+
+    if output == "plain":
+        for i in items:
+            print(i)
+    elif output == "yaml":
+        print(yaml.safe_dump(items))
+    elif output == "json":
+        print(json.dumps(items))
+    elif output == "table" and len(items) > 0:
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
+        for k, _ in items[0].items():
+            table.add_column(k)
+        i = 0
+        for u in items:
+            args = [v for _, v in u.items()]
+            if i % 2:
+                table.add_row(*args, style="grey93 on black")
+            else:
+                table.add_row(*args, style="grey50 on black")
+            i += 1
+
+        console.print(table)

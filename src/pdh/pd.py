@@ -88,3 +88,36 @@ class PD(object):
             "assignments": assignments,
         }
         return self.session.rput(f"/incidents/{inc['id']}", json=new_inc)
+
+
+class User(object):
+    def __init__(self, pd: PD = None, config: dict() = None) -> None:
+        super().__init__()
+        if config is not None:
+            self.pd = PD(config)
+            return
+        if pd is not None:
+            self.pd = pd
+            return
+        raise RuntimeError("You must initialize User class with a config or a PD object")
+
+    def list(self) -> list(dict()):
+        """List all users in PagerDuty account"""
+        users = self.pd.session.iter_all("users")
+
+        def teams_to_human(teams: dict):
+            return ",".join([t["summary"] for t in teams])
+
+        filtered = [
+            {
+                "id": u["id"],
+                "name": u["name"],
+                "email": u["email"],
+                "time_zone": u["time_zone"],
+                "role": u["role"],
+                "job_title": u["job_title"],
+                "teams": teams_to_human(u["teams"]),
+            }
+            for u in users
+        ]
+        return filtered
