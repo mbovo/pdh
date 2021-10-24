@@ -7,7 +7,7 @@ from rich import print
 from rich.live import Live
 from rich.table import Table
 from rich.console import Console
-from .pd import PD, User, UnauthorizedException
+from .pd import PD, Users, UnauthorizedException  # , Incidents
 import time
 from .config import load_and_validate, setup_config
 
@@ -63,11 +63,10 @@ def user(ctx, config):
 )
 def user_list(ctx, output):
     try:
-        pd = PD(ctx.obj)
+        print_items(Users(ctx.obj).list(), output)
     except UnauthorizedException as e:
         print(f"[red]{e}[/red]")
         sys.exit(1)
-    print_items(User(pd).list(), output)
 
 
 @user.command(help="Operate on users", name="get")
@@ -84,15 +83,13 @@ def user_list(ctx, output):
 )
 def user_get(ctx, user, output):
     try:
-        pd = PD(ctx.obj)
+        users = Users(ctx.obj).filter(user)
+        # filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
+
+        print_items(users, output)
     except UnauthorizedException as e:
         print(f"[red]{e}[/red]")
         sys.exit(1)
-
-    users = pd.get_user_by(user)
-    filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
-
-    print_items(filtered, output)
 
 
 @main.group(help="Operater on Incidents")
