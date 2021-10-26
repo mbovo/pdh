@@ -6,6 +6,7 @@ import sys
 from rich import print
 from rich.table import Table
 from rich.console import Console
+
 from .pd import Users, UnauthorizedException, Incidents
 from .pd import (
     STATUS_TRIGGERED,
@@ -40,6 +41,13 @@ def config(config):
 @main.command(help="Print cloud tools version and exit")
 def version():
     click.echo(f"v{pkg_resources.get_distribution('pdh').version}")
+
+
+@main.command(help="Launch TUI")
+def ui():
+    from .tui import MyApp
+
+    MyApp.run(title="Pager Duty for Humans")
 
 
 @main.group(help="Operater on Users")
