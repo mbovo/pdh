@@ -3,6 +3,7 @@ import pkg_resources
 import yaml
 import json
 import sys
+import re
 from rich import print
 from rich.table import Table
 from rich.console import Console
@@ -189,6 +190,7 @@ def reassign(ctx, incident, user):
 @click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
 @click.option("--raw", is_flag=True, default=False, help="output raw data from Pagerduty APIs")
+@click.option("-R", "--regexp", default="", help="regexp to filter incidents")
 @click.option(
     "-o",
     "--output",
@@ -198,7 +200,7 @@ def reassign(ctx, incident, user):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, raw):
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, raw, regexp):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -212,6 +214,13 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     userid = None
     if user:
         userid = Users(ctx.obj).userID_by_name(user)
+
+    filter_re = None
+    try:
+        filter_re = re.compile(regexp)
+    except Exception as e:
+        print(f"[red]Invalid regular expression: {str(e)}[/red]")
+        sys.exit(-2)
 
     incs = []
     pd = Incidents(ctx.obj)
@@ -267,6 +276,14 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 }
                 for i in incs
             ]
+
+        def filter_title(item: str) -> bool:
+            if filter_re.search(item["title"]):
+                return True
+            return False
+
+        # Filter again on Title
+        filtered = [i for i in filter(filter_title, filtered)]
 
         def plain_print(i):
             print(f"{i['assignee']}\t{i['status']}\t{i['title']}\t{i['url']}")
