@@ -8,11 +8,10 @@ from rich import print
 from rich.table import Table
 from rich.console import Console
 
-from .pd import Users, UnauthorizedException, Incidents
+from .pd import Filter, Transformation, Users, UnauthorizedException, Incidents
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
-    STATUS_RESOLVED,
     URGENCY_HIGH,
     URGENCY_LOW,
     DEFAULT_URGENCIES,
@@ -255,40 +254,23 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             if output in ["plain", "table"]:
                 output = "raw"
         else:
-            filtered = [
-                {
-                    "id": i["id"],
-                    "assignee": f'[magenta]{str([a["assignee"]["summary"] for a in i["assignments"]])}[/magenta]',
-                    "urgency": f'[red]{i["urgency"]}[/red]'
-                    if i["urgency"] == URGENCY_HIGH
-                    else f'[cyan]{i["urgency"]}[/cyan]',
-                    "title": f'[red]{i["title"]}[/red]'
-                    if i["urgency"] == URGENCY_HIGH
-                    else f'[cyan]{i["title"]}[/cyan]',
-                    "url": i["html_url"],
-                    "status": f'[red]{i["status"]}[/red]'
-                    if i["status"] == STATUS_TRIGGERED
-                    else f'[green]{i["status"]}[/green]'
-                    if i["status"] == STATUS_RESOLVED
-                    else f'[yellow]{i["status"]}[/yellow]',
-                    "pending_actions": str([f"{a['type']} at {a['at']}" for a in i["pending_actions"]]),
-                    "created_at": i["created_at"],
-                }
-                for i in incs
-            ]
-
-        def filter_title(item: str) -> bool:
-            if filter_re.search(item["title"]):
-                return True
-            return False
-
-        # Filter again on Title
-        filtered = [i for i in filter(filter_title, filtered)]
+            transformations = {
+                "id": Transformation.extract_field("id", check=False),
+                "assignee": Transformation.extract_assignees(),
+                "urgency": Transformation.extract_field("urgency"),
+                "title": Transformation.extract_field("title"),
+                "status": Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True),
+                "url": Transformation.extract_field("html_url", check=False),
+                # TODO: compose this dict dynamically with interesting Transformations instead of filtering out the output
+                # 'pending_actions': Transformation.extract_pending_actions(),
+                # 'created_at': Transformation.extract_field('created_at', check=False)
+            }
+            filtered = Filter.objects(incs, transformations, filters=[Filter.field("title", filter_re)])
 
         def plain_print(i):
             print(f"{i['assignee']}\t{i['status']}\t{i['title']}\t{i['url']}")
 
-        print_items(filtered, output, ["url", "pending_actions", "created_at"], plain_print_f=plain_print)
+        print_items(filtered, output, plain_print_f=plain_print)
         if not watch:
             break
         time.sleep(timeout)

@@ -17,7 +17,7 @@ DEFAULT_STATUSES = [STATUS_TRIGGERED, STATUS_ACK]
 DEFAULT_URGENCIES = [URGENCY_HIGH, URGENCY_LOW]
 
 
-class NPD(object):
+class PD(object):
 
     session = None
     cfg = None
@@ -35,7 +35,7 @@ class NPD(object):
                 raise UnauthorizedException(str(e))
 
 
-class Incidents(NPD):
+class Incidents(PD):
     def list(self, userid: list = None, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES) -> List:
         """List all incidents"""
         params = {"statuses[]": statuses, "urgencies[]": urgencies}
@@ -103,7 +103,7 @@ class Incidents(NPD):
                 print(str(e))
 
 
-class Users(NPD):
+class Users(PD):
     def list(self) -> list(dict()):
         """List all users in PagerDuty account"""
         users = self.session.iter_all("users")
@@ -165,3 +165,58 @@ class Users(NPD):
     def userID_by_name(self, query):
         """Retrieve all usersIDs matching the given (partial) name"""
         return self.userIDs(query, "name")
+
+
+class Filter(object):
+    def field(field: str, regexp):
+        def filter_field(item: dict) -> bool:
+            if regexp.search(item[field]):
+                return True
+            return False
+
+        return filter_field
+
+    def objects(objects: list, transformations: dict, filters: list) -> list:
+        """Give a list of objects, apply every transformations and filters on it, return the new filtered list
+        Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
+                        function to used to extract values from the original list
+        Filters is a list of functions in the form f(item:Any)->bool the item will be in the returned list
+                        if the function returns True
+        """
+        ret = list()
+        for obj in objects:
+            item = {}
+            for path, func in transformations.items():
+                item[path] = func(obj)
+            ret.append(item)
+        for filter_func in filters:
+            ret = [o for o in filter(filter_func, ret)]
+        return ret
+
+
+class Transformation(object):
+    def extract_field(
+        item_name: str,
+        colors: list = ["red", "cyan"],
+        check_field: str = "urgency",
+        check_value: str = URGENCY_HIGH,
+        check: bool = True,
+    ):
+        def extract(i: dict) -> str:
+            if check:
+                if i[check_field] == check_value:
+                    return f"[{colors[0]}]{i[item_name]}[/{colors[0]}]"
+                return f"[{colors[1]}]{i[item_name]}[/{colors[1]}]"
+            else:
+                return f"{i[item_name]}"
+
+        return extract
+
+    def extract_assignees(color: str = "magenta") -> str:
+        def extract(i: dict) -> str:
+            return f'[{color}]{", ".join([a["assignee"]["summary"] for a in i["assignments"]])}[/{color}]'
+
+        return extract
+
+    def extract_pending_actions():
+        return lambda i: str([f"{a['type']} at {a['at']}" for a in i["pending_actions"]])
