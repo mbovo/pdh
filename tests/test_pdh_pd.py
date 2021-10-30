@@ -11,7 +11,7 @@ def config() -> dict():
 
 
 @pytest.fixture
-def pagerduty(mocker: MockerFixture, config) -> pd.PD:
+def pagerduty(mocker: MockerFixture, config) -> pd.Incidents:
     def fake_list_incident(*args, **kwargs):
         return [
             {
@@ -80,38 +80,44 @@ def pagerduty(mocker: MockerFixture, config) -> pd.PD:
             }
         ]
 
-    mocker.patch("pdh.pd.PD.list_incidents", return_value=fake_list_incident())
-    mocker.patch("pdh.pd.PD.get_incident", return_value=fake_list_incident())
-    return pd.PD(config)
+    def fake_bulk_update():
+        return fake_list_incident()
+
+    mocker.patch("pdh.pd.Incidents.list", return_value=fake_list_incident())
+    mocker.patch("pdh.pd.Incidents.mine", return_value=fake_list_incident())
+    mocker.patch("pdh.pd.Incidents.get", return_value=fake_list_incident())
+    mocker.patch("pdh.pd.Incidents.bulk_update", return_value=fake_bulk_update())
+    mocker.patch("pdh.pd.Incidents.update", return_value=fake_bulk_update())
+    return pd.Incidents(config)
 
 
 def test_list_incidents(pagerduty):
-    incs = pagerduty.list_incidents()
+    incs = pagerduty.list()
     assert incs is not None
     assert len(incs) > 0
 
 
 def test_list_my_incidents(pagerduty):
-    incs = pagerduty.list_my_incidents()
+    incs = pagerduty.mine()
     assert incs is not None
     assert len(incs) > 0
 
 
 def test_get_incident(pagerduty):
-    inc = pagerduty.get_incident("PT4KHLK")
+    inc = pagerduty.get("PT4KHLK")
     assert inc is not None
     assert len(inc) > 0
 
 
 def test_ack(pagerduty):
-    inc = pagerduty.get_incident("PT4KHLK")
+    inc = pagerduty.get("PT4KHLK")
     assert inc is not None
-    inc = pagerduty.ack(inc[0])
+    inc = pagerduty.ack(inc[0]["id"])
     assert inc["status"] == "acknowledged"
 
 
 def test_resolve(pagerduty):
-    inc = pagerduty.get_incident("PT4KHLK")
+    inc = pagerduty.get("PT4KHLK")
     assert inc is not None
-    inc = pagerduty.resolve(inc[0])
+    inc = pagerduty.resolve(inc[0]["id"])
     assert inc["status"] == "resolved"
