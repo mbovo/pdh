@@ -1,6 +1,8 @@
 import pytest
 from pytest_mock import MockerFixture
 import json
+
+from requests.models import Response
 from pdh import pd
 
 
@@ -49,9 +51,13 @@ def pagerduty(mocker: MockerFixture, config) -> pd.Incidents:
     def fake_put_incident(addr: str, json: list):
         return json
 
+    def fake_get(addr: str, **kwargs) -> Response:
+        return Response()
+
     mocker.patch("pdpyras.APISession.list_all", side_effect=fake_list_incident)
     mocker.patch("pdpyras.APISession.rget", side_effect=fake_get_incident)
     mocker.patch("pdpyras.APISession.rput", side_effect=fake_put_incident)
+    mocker.patch("pdpyras.APISession.get", side_effect=fake_get)
     # mocker.patch("pdh.pd.Incidents.mine", return_value=fake_list_incident())
     # mocker.patch("pdh.pd.Incidents.get", return_value=fake_list_incident())
     # mocker.patch("pdh.pd.Incidents.bulk_update", return_value=fake_bulk_update())
@@ -81,15 +87,15 @@ def test_get_incident(pagerduty):
     assert inc[0]["id"] == "Q0VVEEB5HX4U06"
 
 
-def test_ack(pagerduty):
+def test_ack(pagerduty: pd.Incidents):
     inc = pagerduty.get("Q0VVEEB5HX4U06")
     assert inc is not None
-    inc = pagerduty.ack(inc[0]["id"])
-    assert inc[0]["status"] == "acknowledged"
+    pagerduty.ack(inc)
+    assert inc[0]["status"] == pd.STATUS_ACK
 
 
-def test_resolve(pagerduty):
+def test_resolve(pagerduty: pd.Incidents):
     inc = pagerduty.get("Q0VVEEB5HX4U06")
     assert inc is not None
-    inc = pagerduty.resolve(inc[0]["id"])
-    assert inc["status"] == "resolved"
+    pagerduty.resolve(inc)
+    assert inc[0]["status"] == pd.STATUS_RESOLVED

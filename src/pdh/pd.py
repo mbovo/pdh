@@ -41,8 +41,7 @@ class Incidents(PD):
         params = {"statuses[]": statuses, "urgencies[]": urgencies}
         if userid:
             params["user_ids[]"] = userid
-        self.incs = self.session.list_all("incidents", params=params)
-        return self.incs
+        return self.session.list_all("incidents", params=params)
 
     def mine(self, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES) -> List:
         """List all incidents assigned to the configured UserID"""
@@ -51,31 +50,22 @@ class Incidents(PD):
     def get(self, id: str) -> dict:
         """Retrieve a single incident by ID"""
         r = self.session.rget(f"/incidents/{id}")
-        self.incs.append(r)
         return r
 
-    def ack(self, ids: List):
-        self.change_status(ids, STATUS_ACK)
+    def ack(self, incs: List):
+        self.change_status(incs, STATUS_ACK)
 
-    def resolve(self, ids: List):
-        self.change_status(ids, STATUS_RESOLVED)
+    def resolve(self, incs: List):
+        self.change_status(incs, STATUS_RESOLVED)
 
-    def change_status(self, ids: List, status: str = STATUS_ACK):
-        def f(s):
-            return s["id"] in ids
-
-        incs = [u for u in filter(f, self.incs)]
-
+    def change_status(self, incs: List, status: str = STATUS_ACK):
         for i in incs:
-            i["status"] = status
+            if "status" in i:
+                i["status"] = status
 
         self.bulk_update(incs)
 
-    def snooze(self, ids: List, duration=14400):
-        def f(s):
-            return s["id"] in ids
-
-        incs = [u for u in filter(f, self.incs)]
+    def snooze(self, incs: List, duration=14400):
         for i in incs:
             self.session.post(f"/incidents/{i['id']}/snooze", json={"duration": duration})
 
@@ -85,12 +75,7 @@ class Incidents(PD):
     def update(self, inc):
         return self.session.rput(f"/incidents/{inc['id']}", json=inc)
 
-    def reassign(self, ids: List[str], uids: List[str]):
-        def f(s):
-            return s["id"] in ids
-
-        incs = [u for u in filter(f, self.incs)]
-
+    def reassign(self, incs: List, uids: List[str]):
         for i in incs:
             assignments = [{"assignee": {"id": u, "type": "user_reference"}} for u in uids]
             new_inc = {
@@ -169,15 +154,79 @@ class Users(PD):
 
 
 class Filter(object):
-    def field(field: str, regexp):
-        def filter_field(item: dict) -> bool:
+    def le(field: str, value: int):
+        def f(item: dict) -> bool:
+            if item[field] <= value:
+                return True
+            return False
+
+        return f
+
+    def ge(field: str, value: int):
+        def f(item: dict) -> bool:
+            if item[field] >= value:
+                return True
+            return False
+
+        return f
+
+    def lt(field: str, value: int):
+        def f(item: dict) -> bool:
+            if item[field] < value:
+                return True
+            return False
+
+        return f
+
+    def gt(field: str, value: int):
+        def f(item: dict) -> bool:
+            if item[field] > value:
+                return True
+            return False
+
+        return f
+
+    def inList(field: str, listOfValues: List[str]):
+        def f(item: dict) -> bool:
+            if item[field] in listOfValues:
+                return True
+            return False
+
+        return f
+
+    def inStr(field: str, value: str):
+        def f(item: dict) -> bool:
+            if value.lower() in item[field].lower():
+                return True
+            return False
+
+        return f
+
+    def ieq(field: str, value: str):
+        def f(item: dict) -> bool:
+            if item[field].lower() == value.lower():
+                return True
+            return False
+
+        return f
+
+    def eq(field: str, value: str):
+        def f(item: dict) -> bool:
+            if item[field] == value:
+                return True
+            return False
+
+        return f
+
+    def regexp(field: str, regexp):
+        def f(item: dict) -> bool:
             if regexp.search(item[field]):
                 return True
             return False
 
-        return filter_field
+        return f
 
-    def objects(objects: list, transformations: dict, filters: list) -> list:
+    def objects(objects: list, transformations: dict = {}, filters: list = []) -> list:
         """Give a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
                         function to used to extract values from the original list

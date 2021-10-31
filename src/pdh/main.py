@@ -124,39 +124,42 @@ def inc(ctx, config):
 
 @inc.command(help="Acknowledge specific incidents IDs")
 @click.pass_context
-@click.argument("incident", nargs=-1)
-def ack(ctx, incident):
+@click.argument("incidentIDs", nargs=-1)
+def ack(ctx, incidentIDs):
     pd = Incidents(ctx.obj)
-    pd.list()
-    for id in incident:
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
+    for id in incidentIDs:
         print(f"Mark {id} as [yellow]ACK[/yellow]")
-    pd.ack(incident)
+    pd.ack(incs)
 
 
 @inc.command(help="Resolve specific incidents IDs")
 @click.pass_context
-@click.argument("incident", nargs=-1)
-def resolve(ctx, incident):
+@click.argument("incidentIDs", nargs=-1)
+def resolve(ctx, incidentIDs):
     pd = Incidents(ctx.obj)
-    pd.list()
-    for id in incident:
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
+    for id in incidentIDs:
         print(f"Mark {id} as [green]RESOLVED[/green]")
-    pd.resolve(incident)
+    pd.resolve(incs)
 
 
 @inc.command(help="Snooze the incident(s) for the specified duration in seconds")
 @click.pass_context
 @click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
-@click.argument("incident", nargs=-1)
-def snooze(ctx, incident, duration):
+@click.argument("incidentIDs", nargs=-1)
+def snooze(ctx, incidentIDs, duration):
     pd = Incidents(ctx.obj)
     import datetime
 
-    pd.list()
-    for id in incident:
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
+    for id in incidentIDs:
         print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
 
-    pd.snooze(incident, duration)
+    pd.snooze(incs, duration)
 
 
 @inc.command(help="Re-assign the incident(s) to the specified user")
@@ -165,6 +168,8 @@ def snooze(ctx, incident, duration):
 @click.argument("incident", nargs=-1)
 def reassign(ctx, incident, user):
     pd = Incidents(ctx.obj)
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incident))
 
     users = Users(ctx.obj).userID_by_name(user)
     if users is None or len(users) == 0:
@@ -173,7 +178,7 @@ def reassign(ctx, incident, user):
     for id in incident:
         print(f"Reassign incident {id} to {users}")
 
-    pd.reassign(incident, users)
+    pd.reassign(incs, users)
 
 
 @inc.command(help="List incidents", name="ls")
@@ -265,7 +270,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 # 'pending_actions': Transformation.extract_pending_actions(),
                 # 'created_at': Transformation.extract_field('created_at', check=False)
             }
-            filtered = Filter.objects(incs, transformations, filters=[Filter.field("title", filter_re)])
+            filtered = Filter.objects(incs, transformations, filters=[Filter.regexp("title", filter_re)])
 
         def plain_print(i):
             print(f"{i['assignee']}\t{i['status']}\t{i['title']}\t{i['url']}")
