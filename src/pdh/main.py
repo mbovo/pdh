@@ -275,22 +275,21 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         console.clear()
 
 
-def print_items(items, output, skip_columns: list = [], plain_print_f=None) -> None:
+def print_items(items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console()) -> None:
 
     if output == "plain":
         for i in items:
             if plain_print_f:
                 plain_print_f(i)
             else:
-                print(i)
+                console.print(i)
     elif output == "raw":
-        print(items)
+        console.print(items)
     elif output == "yaml":
-        print(yaml.safe_dump(items))
+        console.print(yaml.safe_dump(items))
     elif output == "json":
-        print(json.dumps(items))
+        console.print(json.dumps(items))
     elif output == "table" and len(items) > 0:
-        console = Console()
         table = Table(show_header=True, header_style="bold magenta")
         for k, _ in items[0].items():
             if k not in skip_columns:

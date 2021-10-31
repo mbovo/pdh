@@ -124,9 +124,7 @@ class Users(PD):
         users = [u for u in filter(equiv, self.session.iter_all("users"))]
         return users
 
-    def filter(
-        self, query: str, key: str = "name", attributes: List[str] = ["id", "name", "email", "time_zone"]
-    ) -> List[dict]:
+    def filter(self, query: str, key: str = "name", attributes: List[str] = ["id", "name", "email", "time_zone"]) -> List[dict]:
         users = self.search(query, key)
 
         filtered = list()
