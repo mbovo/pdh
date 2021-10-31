@@ -43,13 +43,6 @@ def version():
     click.echo(f"v{pkg_resources.get_distribution('pdh').version}")
 
 
-@main.command(help="Launch TUI")
-def ui():
-    from .tui import MyApp
-
-    MyApp.run(title="Pager Duty for Humans")
-
-
 @main.group(help="Operater on Users")
 @click.option(
     "-c",
