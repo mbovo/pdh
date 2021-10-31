@@ -115,4 +115,5 @@ def test_reassign(pagerduty: pd.Incidents, config):
     inc = pagerduty.get("Q0VVEEB5HX4U06")
     assert inc is not None
     # Reassign to me
-    pagerduty.reassign(inc, uids=[config["uid"]])
+    pagerduty.reassign(inc, uids=["1P3E4F"])
+    # TODO: verify
