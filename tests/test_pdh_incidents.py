@@ -54,14 +54,17 @@ def pagerduty(mocker: MockerFixture, config) -> pd.Incidents:
     def fake_get(addr: str, **kwargs) -> Response:
         return Response()
 
+    def fake_post(addr: str, json: dict) -> Response:
+        return Response()
+
+    def fake_rput(*argv, **kwargs) -> Response:
+        return Response()
+
     mocker.patch("pdpyras.APISession.list_all", side_effect=fake_list_incident)
     mocker.patch("pdpyras.APISession.rget", side_effect=fake_get_incident)
     mocker.patch("pdpyras.APISession.rput", side_effect=fake_put_incident)
     mocker.patch("pdpyras.APISession.get", side_effect=fake_get)
-    # mocker.patch("pdh.pd.Incidents.mine", return_value=fake_list_incident())
-    # mocker.patch("pdh.pd.Incidents.get", return_value=fake_list_incident())
-    # mocker.patch("pdh.pd.Incidents.bulk_update", return_value=fake_bulk_update())
-    # mocker.patch("pdh.pd.Incidents.update", return_value=fake_bulk_update())
+    mocker.patch("pdpyras.APISession.post", side_effect=fake_post)
     return pd.Incidents(config)
 
 
@@ -99,3 +102,17 @@ def test_resolve(pagerduty: pd.Incidents):
     assert inc is not None
     pagerduty.resolve(inc)
     assert inc[0]["status"] == pd.STATUS_RESOLVED
+
+
+def test_snooze(pagerduty: pd.Incidents):
+    inc = pagerduty.get("Q0VVEEB5HX4U06")
+    assert inc is not None
+    pagerduty.snooze(inc, 6000)
+    # TODO: verify
+
+
+def test_reassign(pagerduty: pd.Incidents, config):
+    inc = pagerduty.get("Q0VVEEB5HX4U06")
+    assert inc is not None
+    # Reassign to me
+    pagerduty.reassign(inc, uids=[config["uid"]])
