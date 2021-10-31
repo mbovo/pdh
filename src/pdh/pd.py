@@ -51,6 +51,7 @@ class Incidents(PD):
     def get(self, id: str) -> dict:
         """Retrieve a single incident by ID"""
         r = self.session.rget(f"/incidents/{id}")
+        self.incs.append(r)
         return r
 
     def ack(self, ids: List):

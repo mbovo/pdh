@@ -1,123 +1,95 @@
 import pytest
 from pytest_mock import MockerFixture
-
+import json
 from pdh import pd
 
 
 @pytest.fixture
 def config() -> dict():
     # This is the test token from https://developer.pagerduty.com/api-reference
-    return {"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@domain.tld", "uid": "UID123"}
+    return {"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@domain.tld", "uid": "PXCT22H"}
 
 
 @pytest.fixture
 def pagerduty(mocker: MockerFixture, config) -> pd.Incidents:
     def fake_list_incident(*args, **kwargs):
-        return [
-            {
-                "id": "PT4KHLK",
-                "type": "incident",
-                "summary": "[#1234] The server is on fire.",
-                "self": "https://api.pagerduty.com/incidents/PT4KHLK",
-                "html_url": "https://subdomain.pagerduty.com/incidents/PT4KHLK",
-                "incident_number": 1234,
-                "created_at": "2015-10-06T21:30:42Z",
-                "status": "resolved",
-                "title": "The server is on fire.",
-                "incident_key": "baf7cf21b1da41b4b0221008339ff357",
-                "service": {
-                    "id": "PIJ90N7",
-                    "type": "service_reference",
-                    "summary": "My Mail Service",
-                    "self": "https://api.pagerduty.com/services/PIJ90N7",
-                    "html_url": "https://subdomain.pagerduty.com/services/PIJ90N7",
-                },
-                "priority": {
-                    "id": "P53ZZH5",
-                    "type": "priority_reference",
-                    "summary": "P2",
-                    "self": "https://api.pagerduty.com/priorities/P53ZZH5",
-                },
-                "assigned_via": "escalation_policy",
-                "assignments": [],
-                "acknowledgements": [],
-                "last_status_change_at": "2015-10-06T21:38:23Z",
-                "last_status_change_by": {
-                    "id": "PXPGF42",
-                    "type": "user_reference",
-                    "summary": "Earline Greenholt",
-                    "self": "https://api.pagerduty.com/users/PXPGF42",
-                    "html_url": "https://subdomain.pagerduty.com/users/PXPGF42",
-                },
-                "first_trigger_log_entry": {
-                    "id": "Q02JTSNZWHSEKV",
-                    "type": "trigger_log_entry_reference",
-                    "summary": "Triggered through the API",
-                    "self": "https://api.pagerduty.com/log_entries/Q02JTSNZWHSEKV?incident_id=PT4KHLK",
-                    "html_url": "https://subdomain.pagerduty.com/incidents/PT4KHLK/log_entries/Q02JTSNZWHSEKV",
-                },
-                "escalation_policy": {
-                    "id": "PT20YPA",
-                    "type": "escalation_policy_reference",
-                    "summary": "Another Escalation Policy",
-                    "self": "https://api.pagerduty.com/escalation_policies/PT20YPA",
-                    "html_url": "https://subdomain.pagerduty.com/escalation_policies/PT20YPA",
-                },
-                "teams": [
-                    {
-                        "id": "PQ9K7I8",
-                        "type": "team_reference",
-                        "summary": "Engineering",
-                        "self": "https://api.pagerduty.com/teams/PQ9K7I8",
-                        "html_url": "https://subdomain.pagerduty.com/teams/PQ9K7I8",
-                    }
-                ],
-                "urgency": "high",
-                "conference_bridge": {
-                    "conference_number": "+1-415-555-1212,,,,1234#",
-                    "conference_url": "https://example.com/acb-123",
-                },
-            }
-        ]
+        ret = []
+        loaded = []
+        with open("tests/incidents_list.json", "r") as f:
+            loaded = json.load(f)
 
-    def fake_bulk_update():
-        return fake_list_incident()
+        if "user_ids[]" in kwargs["params"]:
+            for i in ret:
+                for assignments in i["assignments"]:
+                    if assignments["assignee"]["id"] in kwargs["params"]["user_ids[]"]:
+                        ret.append(i)
 
-    mocker.patch("pdh.pd.Incidents.list", return_value=fake_list_incident())
-    mocker.patch("pdh.pd.Incidents.mine", return_value=fake_list_incident())
-    mocker.patch("pdh.pd.Incidents.get", return_value=fake_list_incident())
-    mocker.patch("pdh.pd.Incidents.bulk_update", return_value=fake_bulk_update())
-    mocker.patch("pdh.pd.Incidents.update", return_value=fake_bulk_update())
+        if "statuses[]" in kwargs["params"]:
+            for i in loaded:
+                if i["status"] in kwargs["params"]["statuses[]"]:
+                    ret.append(i)
+        if "urgencies[]" in kwargs["params"]:
+            for i in loaded:
+                if i["urgency"] in kwargs["params"]["urgencies[]"]:
+                    ret.append(i)
+
+        return ret
+
+    def fake_get_incident(addr: str):
+        id = addr.replace("/incidents/", "")
+        loaded = []
+        ret = []
+        with open("tests/incidents_list.json", "r") as f:
+            loaded = json.load(f)
+        for i in loaded:
+            if i["id"] == id:
+                ret.append(i)
+        return ret
+
+    def fake_put_incident(addr: str, json: list):
+        return json
+
+    mocker.patch("pdpyras.APISession.list_all", side_effect=fake_list_incident)
+    mocker.patch("pdpyras.APISession.rget", side_effect=fake_get_incident)
+    mocker.patch("pdpyras.APISession.rput", side_effect=fake_put_incident)
+    # mocker.patch("pdh.pd.Incidents.mine", return_value=fake_list_incident())
+    # mocker.patch("pdh.pd.Incidents.get", return_value=fake_list_incident())
+    # mocker.patch("pdh.pd.Incidents.bulk_update", return_value=fake_bulk_update())
+    # mocker.patch("pdh.pd.Incidents.update", return_value=fake_bulk_update())
     return pd.Incidents(config)
 
 
-def test_list_incidents(pagerduty):
+def test_list_incidents(pagerduty, config):
     incs = pagerduty.list()
     assert incs is not None
     assert len(incs) > 0
+    assert incs[0]["assignments"][0]["assignee"]["id"] == config["uid"]
 
 
-def test_list_my_incidents(pagerduty):
+def test_list_my_incidents(pagerduty, config):
     incs = pagerduty.mine()
     assert incs is not None
     assert len(incs) > 0
+    for i in incs:
+        assert i["assignments"][0]["assignee"]["id"] == config["uid"]
 
 
 def test_get_incident(pagerduty):
-    inc = pagerduty.get("PT4KHLK")
+    inc = pagerduty.get("Q0VVEEB5HX4U06")
     assert inc is not None
     assert len(inc) > 0
+    assert inc[0]["id"] == "Q0VVEEB5HX4U06"
 
 
 def test_ack(pagerduty):
-    inc = pagerduty.get("PT4KHLK")
+    inc = pagerduty.get("Q0VVEEB5HX4U06")
     assert inc is not None
     inc = pagerduty.ack(inc[0]["id"])
-    assert inc["status"] == "acknowledged"
+    assert inc[0]["status"] == "acknowledged"
 
 
 def test_resolve(pagerduty):
-    inc = pagerduty.get("PT4KHLK")
+    inc = pagerduty.get("Q0VVEEB5HX4U06")
     assert inc is not None
     inc = pagerduty.resolve(inc[0]["id"])
     assert inc["status"] == "resolved"
