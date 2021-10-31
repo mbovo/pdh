@@ -71,7 +71,16 @@ def user(ctx, config):
 )
 def user_list(ctx, output):
     try:
-        print_items(Users(ctx.obj).list(), output)
+        u = Users(ctx.obj)
+        users = u.list()
+
+        transformations = {}
+        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
+            transformations[t] = Transformation.extract_field(t, check=False)
+        transformations["teams"] = lambda x: ",".join([t["summary"] for t in x["teams"]])
+
+        filtered = Filter.objects(users, transformations, [])
+        print_items(filtered, output)
     except UnauthorizedException as e:
         print(f"[red]{e}[/red]")
         sys.exit(1)

@@ -94,22 +94,7 @@ class Users(PD):
         """List all users in PagerDuty account"""
         users = self.session.iter_all("users")
 
-        def teams_to_human(teams: dict):
-            return ",".join([t["summary"] for t in teams])
-
-        filtered = [
-            {
-                "id": u["id"],
-                "name": u["name"],
-                "email": u["email"],
-                "time_zone": u["time_zone"],
-                "role": u["role"],
-                "job_title": u["job_title"],
-                "teams": teams_to_human(u["teams"]),
-            }
-            for u in users
-        ]
-        return filtered
+        return users
 
     def get(self, id: str) -> Dict:
         """Get a single user by ID"""
