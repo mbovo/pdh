@@ -81,15 +81,15 @@ def user_list(ctx, output):
         for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
             transformations[t] = Transformation.extract_field(t, check=False)
         transformations["teams"] = Transformation.extract_users_teams()
-
         filtered = Filter.objects(users, transformations, [])
+
         print_items(filtered, output)
     except UnauthorizedException as e:
         print(f"[red]{e}[/red]")
         sys.exit(1)
 
 
-@user.command(help="Operate on users", name="get")
+@user.command(help="Retrieve an user by name or ID", name="get")
 @click.pass_context
 @click.argument("user")
 @click.option(
@@ -103,10 +103,23 @@ def user_list(ctx, output):
 )
 def user_get(ctx, user, output):
     try:
-        users = Users(ctx.obj).filter(user)
-        # filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
+        u = Users(ctx.obj)
+        # search by name
+        users = u.search(user)
+        if len(users) == 0:
+            # if empty search by ID
+            users = u.search(user, "id")
 
-        print_items(users, output)
+        # Prepare to filter and transform
+        transformations = {}
+        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
+            # extract these fields from the original API response
+            transformations[t] = Transformation.extract_field(t, check=False)
+        transformations["teams"] = Transformation.extract_users_teams()
+
+        filtered = Filter.objects(users, transformations, [])
+
+        print_items(filtered, output)
     except UnauthorizedException as e:
         print(f"[red]{e}[/red]")
         sys.exit(1)

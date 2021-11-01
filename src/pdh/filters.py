@@ -2,6 +2,11 @@ from typing import List
 
 
 class Filter(object):
+    """
+    Filter is a collection of methods to functions to filter out items from an iterator,
+    useful when used in conjunction with filter()
+    """
+
     def le(field: str, value: int):
         def f(item: dict) -> bool:
             if item[field] <= value:
@@ -75,9 +80,9 @@ class Filter(object):
         return f
 
     def objects(objects: list, transformations: dict = {}, filters: list = []) -> list:
-        """Give a list of objects, apply every transformations and filters on it, return the new filtered list
+        """Given a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
-                        function to used to extract values from the original list
+                        function to used to extract values from the original list (see Transformation class)
         Filters is a list of functions in the form f(item:Any)->bool the item will be in the returned list
                         if the function returns True
         """
@@ -89,4 +94,5 @@ class Filter(object):
             ret.append(item)
         for filter_func in filters:
             ret = [o for o in filter(filter_func, ret)]
+
         return ret

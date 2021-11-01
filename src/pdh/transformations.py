@@ -2,6 +2,10 @@ from .pd import URGENCY_HIGH
 
 
 class Transformation(object):
+    """
+    Transformation is a collection of methods to transform dictionaries
+    """
+
     def extract_field(
         item_name: str,
         colors: list = ["red", "cyan"],
