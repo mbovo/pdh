@@ -8,7 +8,7 @@ from rich import print
 from rich.table import Table
 from rich.console import Console
 
-from .pd import Filter, Transformation, Users, UnauthorizedException, Incidents
+from .pd import Users, UnauthorizedException, Incidents
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
@@ -16,6 +16,9 @@ from .pd import (
     URGENCY_LOW,
     DEFAULT_URGENCIES,
 )
+from .transformations import Transformation
+from .filters import Filter
+
 import time
 from .config import load_and_validate, setup_config
 
@@ -77,7 +80,7 @@ def user_list(ctx, output):
         transformations = {}
         for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
             transformations[t] = Transformation.extract_field(t, check=False)
-        transformations["teams"] = lambda x: ",".join([t["summary"] for t in x["teams"]])
+        transformations["teams"] = Transformation.extract_users_teams()
 
         filtered = Filter.objects(users, transformations, [])
         print_items(filtered, output)
