@@ -25,23 +25,13 @@ class Config(object):
         else:
             self.cfg.update(o)
 
-    def to_yaml(self, fileName: str) -> bool:
-        try:
-            with open(os.path.expanduser(fileName), "w") as f:
-                yaml.safe_dump(self.cfg, f)
-        except Exception as e:
-            print(f"[red]{e}[/red]")
-            return False
-        return True
+    def to_yaml(self, fileName: str) -> None:
+        with open(os.path.expanduser(fileName), "w") as f:
+            yaml.safe_dump(self.cfg, f)
 
-    def to_json(self, fileName: str) -> bool:
-        try:
-            with open(os.path.expanduser(fileName), "w") as f:
-                json.dump(self.cfg, f)
-        except Exception as e:
-            print(f"[red]{e}[/red]")
-            return False
-        return True
+    def to_json(self, fileName: str) -> None:
+        with open(os.path.expanduser(fileName), "w") as f:
+            json.dump(self.cfg, f)
 
     def from_json(self, path, key: str = None) -> None:
         """Load configuration from a json file, store it directly or under the specified key (if any)"""
@@ -70,6 +60,9 @@ class Config(object):
 
     def __str__(self) -> str:
         return repr(self.cfg)
+
+    def __contains__(self, key):
+        return key in self.cfg
 
 
 config = Config()
