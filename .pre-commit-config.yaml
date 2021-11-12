@@ -40,4 +40,4 @@ repos:
           - --max-complexity=10
           - --max-line-length=150
           - --statistics
-          - --ignore=E203,C901,E731
+          - --ignore=E203,C901,E731,E501

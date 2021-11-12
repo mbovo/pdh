@@ -3,13 +3,26 @@ import pkg_resources
 import yaml
 import json
 import sys
+import re
 from rich import print
-from rich.live import Live
 from rich.table import Table
 from rich.console import Console
-from .pd import PD, UnauthorizedException
+
+from .pd import Users, UnauthorizedException, Incidents
+from .pd import (
+    STATUS_TRIGGERED,
+    STATUS_ACK,
+    URGENCY_HIGH,
+    URGENCY_LOW,
+    DEFAULT_URGENCIES,
+)
+from .transformations import Transformation
+from .filters import Filter
+
 import time
 from .config import load_and_validate, setup_config
+
+VALID_OUTPUTS = ["plain", "table", "json", "yaml", "raw"]
 
 
 @click.group(help="PDH - PagerDuty for Humans")
@@ -48,7 +61,35 @@ def user(ctx, config):
     ctx.obj = cfg
 
 
-@user.command(help="Operate on users", name="get")
+@user.command(help="List users", name="ls")
+@click.pass_context
+@click.option(
+    "-o",
+    "--output",
+    "output",
+    help="output format",
+    required=False,
+    type=click.Choice(VALID_OUTPUTS),
+    default="table",
+)
+def user_list(ctx, output):
+    try:
+        u = Users(ctx.obj)
+        users = u.list()
+
+        transformations = {}
+        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
+            transformations[t] = Transformation.extract_field(t, check=False)
+        transformations["teams"] = Transformation.extract_users_teams()
+        filtered = Filter.objects(users, transformations, [])
+
+        print_items(filtered, output)
+    except UnauthorizedException as e:
+        print(f"[red]{e}[/red]")
+        sys.exit(1)
+
+
+@user.command(help="Retrieve an user by name or ID", name="get")
 @click.pass_context
 @click.argument("user")
 @click.option(
@@ -57,42 +98,31 @@ def user(ctx, config):
     "output",
     help="output format",
     required=False,
-    type=click.Choice(["table", "yaml", "json", "plain"]),
+    type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
 def user_get(ctx, user, output):
     try:
-        pd = PD(ctx.obj)
+        u = Users(ctx.obj)
+        # search by name
+        users = u.search(user)
+        if len(users) == 0:
+            # if empty search by ID
+            users = u.search(user, "id")
+
+        # Prepare to filter and transform
+        transformations = {}
+        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
+            # extract these fields from the original API response
+            transformations[t] = Transformation.extract_field(t, check=False)
+        transformations["teams"] = Transformation.extract_users_teams()
+
+        filtered = Filter.objects(users, transformations, [])
+
+        print_items(filtered, output)
     except UnauthorizedException as e:
         print(f"[red]{e}[/red]")
         sys.exit(1)
-
-    users = pd.get_user_by(user)
-    filtered = [{"id": u["id"], "name": u["name"], "email": u["email"], "time_zone": u["time_zone"]} for u in users]
-
-    if output == "plain":
-        for i in filtered:
-            urgency_c = "cyan"
-            if i["urgency"] == "high":
-                urgency_c = "red"
-            status_c = "green"
-            if i["status"] == "triggered":
-                status_c = "red"
-            print(
-                f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
-            )
-    elif output == "yaml":
-        print(yaml.safe_dump(filtered))
-    elif output == "json":
-        print(json.dumps(filtered))
-    elif output == "table" and len(filtered) > 0:
-        console = Console()
-        table = Table(show_header=True, header_style="bold magenta")
-        for k, _ in filtered[0].items():
-            table.add_column(k)
-        for u in filtered:
-            table.add_row(u["id"], u["name"], u["email"], u["time_zone"])
-        console.print(table)
 
 
 @main.group(help="Operater on Incidents")
@@ -112,40 +142,42 @@ def inc(ctx, config):
 
 @inc.command(help="Acknowledge specific incidents IDs")
 @click.pass_context
-@click.argument("incident", nargs=-1)
-def ack(ctx, incident):
-    pd = PD(ctx.obj)
-    for id in incident:
-        i = pd.get_incident(id)
-        pd.ack(i)
-        print(f"Mark {i['id']} [cyan]{i['title']}[/cyan] as [yellow]ACK[/yellow]")
-        pd.update_incident(i)
+@click.argument("incidentIDs", nargs=-1)
+def ack(ctx, incidentIDs):
+    pd = Incidents(ctx.obj)
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
+    for id in incidentIDs:
+        print(f"Mark {id} as [yellow]ACK[/yellow]")
+    pd.ack(incs)
 
 
 @inc.command(help="Resolve specific incidents IDs")
 @click.pass_context
-@click.argument("incident", nargs=-1)
-def resolve(ctx, incident):
-    pd = PD(ctx.obj)
-    for id in incident:
-        i = pd.get_incident(id)
-        pd.resolve(i)
-        print(f"Mark {i['id']} [cyan]{i['title']}[/cyan] as [green]RESOLVED[/green]")
-        pd.update_incident(i)
+@click.argument("incidentIDs", nargs=-1)
+def resolve(ctx, incidentIDs):
+    pd = Incidents(ctx.obj)
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
+    for id in incidentIDs:
+        print(f"Mark {id} as [green]RESOLVED[/green]")
+    pd.resolve(incs)
 
 
 @inc.command(help="Snooze the incident(s) for the specified duration in seconds")
 @click.pass_context
 @click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
-@click.argument("incident", nargs=-1)
-def snooze(ctx, incident, duration):
-    pd = PD(ctx.obj)
+@click.argument("incidentIDs", nargs=-1)
+def snooze(ctx, incidentIDs, duration):
+    pd = Incidents(ctx.obj)
     import datetime
 
-    for id in incident:
-        i = pd.get_incident(id)
-        print(f"Snoozing incident {i['id']} for { str(datetime.timedelta(seconds=duration))}")
-        pd.snooze(i, duration)
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
+    for id in incidentIDs:
+        print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
+
+    pd.snooze(incs, duration)
 
 
 @inc.command(help="Re-assign the incident(s) to the specified user")
@@ -153,19 +185,21 @@ def snooze(ctx, incident, duration):
 @click.option("-u", "--user", required=True, help="User name or email to assign to (fuzzy find!)")
 @click.argument("incident", nargs=-1)
 def reassign(ctx, incident, user):
-    pd = PD(ctx.obj)
+    pd = Incidents(ctx.obj)
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=Filter.inList("id", incident))
 
-    users = pd.get_userID_by_name(user)
+    users = Users(ctx.obj).userID_by_name(user)
     if users is None or len(users) == 0:
-        users = pd.get_userID_by_email(user)
+        users = Users(ctx.obj).userID_by_name(user)
 
     for id in incident:
-        i = pd.get_incident(id)
-        print(f"Reassign incident {i['id']} to {users}")
-        print(pd.reassign(i, users))
+        print(f"Reassign incident {id} to {users}")
+
+    pd.reassign(incs, users)
 
 
-@inc.command(help="List incidents")
+@inc.command(help="List incidents", name="ls")
 @click.pass_context
 @click.option("-e", "--everything", help="List all incidents not only assigned to me", is_flag=True, default=False)
 @click.option("-u", "--user", default=None, help="Filter only incidents assigned to this user ID")
@@ -177,121 +211,121 @@ def reassign(ctx, incident, user):
 @click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
 @click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
+@click.option("--raw", is_flag=True, default=False, help="output raw data from Pagerduty APIs")
+@click.option("-R", "--regexp", default="", help="regexp to filter incidents")
 @click.option(
     "-o",
     "--output",
     "output",
     help="output format",
     required=False,
-    type=click.Choice(["table", "yaml", "json", "plain"]),
+    type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def ls(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout):
-    pd = PD(ctx.obj)
-    incs = []
-    status = ["triggered"]
-    urgencies = ["high", "low"]
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, raw, regexp):
+
+    # Prepare defaults
+    status = [STATUS_TRIGGERED]
+    urgencies = DEFAULT_URGENCIES
     if high:
-        urgencies = ["high"]
+        urgencies = [URGENCY_HIGH]
     if low:
-        urgencies = ["low"]
-
+        urgencies = [URGENCY_LOW]
     if not new:
-        status.append("acknowledged")
-
-    console = Console()
-
+        status.append(STATUS_ACK)
     userid = None
     if user:
-        userid = pd.get_userID_by_name(user)
+        userid = Users(ctx.obj).userID_by_name(user)
 
+    filter_re = None
+    try:
+        filter_re = re.compile(regexp)
+    except Exception as e:
+        print(f"[red]Invalid regular expression: {str(e)}[/red]")
+        sys.exit(-2)
+
+    incs = []
+    pd = Incidents(ctx.obj)
+    console = Console()
     while True:
-
         if everything or userid:
-            incs = pd.list_incidents(userid, statuses=status, urgencies=urgencies)
+            incs = pd.list(userid, statuses=status, urgencies=urgencies)
         else:
-            incs = pd.list_my_incidents(statuses=status, urgencies=urgencies)
+            incs = pd.mine(statuses=status, urgencies=urgencies)
 
-        # Updates
-        if len(incs) > 0:
-            for i in incs:
-                if snooze:
-                    print(f"Snoozing incident {i['id']} for 4h")
-                    i = pd.snooze(i)
-
-                if resolve:
-                    i = pd.resolve(i)
-                    print(f"Mark {i['id']} as [green]RESOLVED[/green]")
-
-                if ack:
-                    i = pd.ack(i)
-                    print(f"Mark {i['id']} as [yellow]ACK[/yellow]")
-
-            if ack or resolve:
-                print("Sending bulk updates")
-                update = pd.bulk_update_incident(incs)
-                print(f"[green]ACK for {len(update)} incidents[green]")
-
-        else:
+        ids = [i["id"] for i in incs]
+        if snooze:
+            pd.snooze(ids)
             if output not in ["yaml", "json"]:
-                print("[green]:red_heart-emoji:  Hooray :red_heart-emoji:  No alerts found![/green]")
+                for i in ids:
+                    print(f"Snoozing incident {i} for 4h")
+        if resolve:
+            pd.resolve(ids)
+            if output not in ["yaml", "json"]:
+                for i in ids:
+                    print(f"Mark {i} as [green]RESOLVED[/green]")
+        if ack:
+            pd.ack(ids)
+            if output not in ["yaml", "json"]:
+                for i in ids:
+                    print(f"Marked {i} as [yellow]ACK[/yellow]")
 
         # Build filtered list for output
-        filtered = [
-            {
-                "id": i["id"],
-                "assignee": [a["assignee"]["summary"] for a in i["assignments"]],
-                "urgency": i["urgency"],
-                "title": i["title"],
-                "url": i["html_url"],
-                "status": i["status"],
-                "pending_actions": [f"{a['type']} at {a['at']}" for a in i["pending_actions"]],
-                "created_at": i["created_at"],
+        if raw:
+            filtered = incs
+            # Switch to raw output if you choose table or plain
+            if output in ["plain", "table"]:
+                output = "raw"
+        else:
+            transformations = {
+                "id": Transformation.extract_field("id", check=False),
+                "assignee": Transformation.extract_assignees(),
+                "urgency": Transformation.extract_field("urgency"),
+                "title": Transformation.extract_field("title"),
+                "status": Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True),
+                "url": Transformation.extract_field("html_url", check=False),
+                # TODO: compose this dict dynamically with interesting Transformations instead of filtering out the output
+                # 'pending_actions': Transformation.extract_pending_actions(),
+                # 'created_at': Transformation.extract_field('created_at', check=False)
             }
-            for i in incs
-        ]
+            filtered = Filter.objects(incs, transformations, filters=[Filter.regexp("title", filter_re)])
 
-        # OUTPUT
-        if output == "plain":
-            for i in filtered:
-                urgency_c = "cyan"
-                if i["urgency"] == "high":
-                    urgency_c = "red"
-                status_c = "green"
-                if i["status"] == "triggered":
-                    status_c = "red"
-                print(
-                    f"[magenta]{i['assignee']}[/magenta] [{status_c}]{i['status']}[/{status_c}] [{urgency_c}]{i['title']}[/{urgency_c}]  {i['url']}"
-                )
-        elif output == "yaml":
-            print(yaml.safe_dump(filtered))
-        elif output == "json":
-            print(json.dumps(filtered))
-        elif output == "table" and len(filtered) > 0:
-            print(f"[yellow]Found {len(incs)} incidents[/yellow]")
-            table = Table(show_header=True, header_style="bold magenta")
-            for k, _ in filtered[0].items():
-                table.add_column(k)
+        def plain_print(i):
+            print(f"{i['assignee']}\t{i['status']}\t{i['title']}\t{i['url']}")
 
-            with Live(table, refresh_per_second=4):
-                for i in filtered:
-                    urgency_c = "cyan"
-                    if i["urgency"] == "high":
-                        urgency_c = "red"
-                    status_c = "yellow"
-                    if i["status"] == "triggered":
-                        status_c = "red"
-                    table.add_row(
-                        i["id"],
-                        f"[magenta]{i['assignee']}[/magenta]",
-                        f"[{urgency_c}]{i['urgency']}[/{urgency_c}]",
-                        f"[{urgency_c}]{i['title']}[/{urgency_c}]",
-                        f"[{urgency_c}]{i['url']}[/{urgency_c}]",
-                        f"[{status_c}]{i['status']}[/{status_c}]",
-                        "\n".join(i["pending_actions"]),
-                        i["created_at"],
-                    )
+        print_items(filtered, output, plain_print_f=plain_print)
         if not watch:
             break
         time.sleep(timeout)
         console.clear()
+
+
+def print_items(items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console()) -> None:
+
+    if output == "plain":
+        for i in items:
+            if plain_print_f:
+                plain_print_f(i)
+            else:
+                console.print(i)
+    elif output == "raw":
+        console.print(items)
+    elif output == "yaml":
+        console.print(yaml.safe_dump(items))
+    elif output == "json":
+        console.print(json.dumps(items))
+    elif output == "table" and len(items) > 0:
+        table = Table(show_header=True, header_style="bold magenta")
+        for k, _ in items[0].items():
+            if k not in skip_columns:
+                table.add_column(k)
+        i = 0
+        for u in items:
+            args = [v for k, v in u.items() if k not in skip_columns]
+            if i % 2:
+                table.add_row(*args, style="grey93 on black")
+            else:
+                table.add_row(*args, style="grey50 on black")
+            i += 1
+
+        console.print(table)
