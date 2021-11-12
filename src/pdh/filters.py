@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 
@@ -72,6 +73,9 @@ class Filter(object):
         return f
 
     def regexp(field: str, regexp):
+        if type(regexp) is str:
+            regexp = re.compile(regexp)
+
         def f(item: dict) -> bool:
             if regexp.search(item[field]):
                 return True
@@ -79,7 +83,7 @@ class Filter(object):
 
         return f
 
-    def objects(objects: list, transformations: dict = {}, filters: list = []) -> list:
+    def objects(objects: list, transformations: dict = None, filters: list = []) -> list:
         """Given a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
                         function to used to extract values from the original list (see Transformation class)
@@ -88,10 +92,13 @@ class Filter(object):
         """
         ret = list()
         for obj in objects:
-            item = {}
-            for path, func in transformations.items():
-                item[path] = func(obj)
-            ret.append(item)
+            if transformations is not None:
+                item = {}
+                for path, func in transformations.items():
+                    item[path] = func(obj)
+                ret.append(item)
+            else:
+                ret.append(obj)
         for filter_func in filters:
             ret = [o for o in filter(filter_func, ret)]
 

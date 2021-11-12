@@ -1,3 +1,4 @@
+from typing import Any
 from .pd import URGENCY_HIGH
 
 
@@ -5,6 +6,12 @@ class Transformation(object):
     """
     Transformation is a collection of methods to transform dictionaries
     """
+
+    def identity(field_name):
+        def fun(i: dict) -> Any:
+            return i[field_name]
+
+        return fun
 
     def extract_field(
         item_name: str,
