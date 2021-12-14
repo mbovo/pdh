@@ -1,4 +1,5 @@
 from typing import Dict, List
+from rich import print
 from pdpyras import APISession, PDClientError
 
 
@@ -67,13 +68,24 @@ class Incidents(PD):
 
     def snooze(self, incs: List, duration=14400):
         for i in incs:
-            self.session.post(f"/incidents/{i['id']}/snooze", json={"duration": duration})
+            try:
+                self.session.post(f"/incidents/{i['id']}/snooze", json={"duration": duration})
+            except Exception as e:
+                print(e)
 
     def bulk_update(self, incs: List):
-        return self.session.rput("incidents", json=incs)
+        try:
+            ret = self.session.rput("incidents", json=incs)
+        except Exception as e:
+            print(e)
+        return ret
 
     def update(self, inc):
-        return self.session.rput(f"/incidents/{inc['id']}", json=inc)
+        try:
+            ret = self.session.rput(f"/incidents/{inc['id']}", json=inc)
+        except Exception as e:
+            print(e)
+        return ret
 
     def reassign(self, incs: List, uids: List[str]):
         for i in incs:

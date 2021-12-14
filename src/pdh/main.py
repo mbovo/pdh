@@ -142,24 +142,24 @@ def inc(ctx, config):
 
 @inc.command(help="Acknowledge specific incidents IDs")
 @click.pass_context
-@click.argument("incidentIDs", nargs=-1)
-def ack(ctx, incidentIDs):
+@click.argument("incidentids", nargs=-1)
+def ack(ctx, incidentids):
     pd = Incidents(ctx.obj)
     incs = pd.list()
-    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
-    for id in incidentIDs:
+    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
+    for id in incidentids:
         print(f"Mark {id} as [yellow]ACK[/yellow]")
     pd.ack(incs)
 
 
 @inc.command(help="Resolve specific incidents IDs")
 @click.pass_context
-@click.argument("incidentIDs", nargs=-1)
-def resolve(ctx, incidentIDs):
+@click.argument("incidentids", nargs=-1)
+def resolve(ctx, incidentids):
     pd = Incidents(ctx.obj)
     incs = pd.list()
-    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
-    for id in incidentIDs:
+    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
+    for id in incidentids:
         print(f"Mark {id} as [green]RESOLVED[/green]")
     pd.resolve(incs)
 
@@ -255,17 +255,17 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
         ids = [i["id"] for i in incs]
         if snooze:
-            pd.snooze(ids)
+            pd.snooze(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Snoozing incident {i} for 4h")
         if resolve:
-            pd.resolve(ids)
+            pd.resolve(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Mark {i} as [green]RESOLVED[/green]")
         if ack:
-            pd.ack(ids)
+            pd.ack(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Marked {i} as [yellow]ACK[/yellow]")
