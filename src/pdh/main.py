@@ -4,6 +4,7 @@ import yaml
 import json
 import sys
 import re
+import os
 from rich import print
 from rich.table import Table
 from rich.console import Console
@@ -199,6 +200,33 @@ def reassign(ctx, incident, user):
     pd.reassign(incs, users)
 
 
+@inc.command(help="Apply scripts with sideeffects to given incident")
+@click.pass_context
+@click.option("-p", "--path", required=True, help="Subdirectory with scripts to run")
+@click.argument("incident", nargs=-1)
+@click.option(
+    "-o",
+    "--output",
+    "output",
+    help="output format",
+    required=False,
+    type=click.Choice(VALID_OUTPUTS),
+    default="table",
+)
+def apply(ctx, incident, path, output):
+    pd = Incidents(ctx.obj)
+    incs = pd.list()
+    incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
+    scripts = []
+    for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
+        scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
+
+    results = pd.apply(incs, scripts)
+    print_items(results, output)
+
+    pass
+
+
 @inc.command(help="List incidents", name="ls")
 @click.pass_context
 @click.option("-e", "--everything", help="List all incidents not only assigned to me", is_flag=True, default=False)
@@ -212,6 +240,7 @@ def reassign(ctx, incident, user):
 @click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
 @click.option("--raw", is_flag=True, default=False, help="output raw data from Pagerduty APIs")
+@click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
 @click.option("-R", "--regexp", default="", help="regexp to filter incidents")
 @click.option(
     "-o",
