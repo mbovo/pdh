@@ -30,6 +30,7 @@ class PD(object):
         if not self.session:
             self.cfg = cfg
             self.session = APISession(cfg["apikey"], default_from=cfg["email"])
+            self.session.max_network_attempts = 5
             try:
                 self.session.get("/users/me")
             except PDClientError as e:
@@ -74,16 +75,18 @@ class Incidents(PD):
                 print(e)
 
     def bulk_update(self, incs: List):
+        ret = None
         try:
             ret = self.session.rput("incidents", json=incs)
-        except Exception as e:
+        except PDClientError as e:
             print(e)
         return ret
 
     def update(self, inc):
+        ret = None
         try:
             ret = self.session.rput(f"/incidents/{inc['id']}", json=inc)
-        except Exception as e:
+        except PDClientError as e:
             print(e)
         return ret
 
