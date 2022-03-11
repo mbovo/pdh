@@ -241,6 +241,7 @@ def apply(ctx, incident, path, output):
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
 @click.option("--raw", is_flag=True, default=False, help="output raw data from Pagerduty APIs")
 @click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
+@click.option("--rules-path", required=False, default="~/.config/pdh_rules", help="Apply all executable find in this path")
 @click.option("-R", "--regexp", default="", help="regexp to filter incidents")
 @click.option(
     "-o",
@@ -251,7 +252,7 @@ def apply(ctx, incident, path, output):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, raw, regexp):
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, raw, regexp, apply, rules_path):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -298,6 +299,12 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Marked {i} as [yellow]ACK[/yellow]")
+        if apply:
+            scripts = []
+            for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(rules_path))):
+                scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
+            ret = pd.apply(incs, scripts)
+            print_items(ret, output)
 
         # Build filtered list for output
         if raw:
