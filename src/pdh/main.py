@@ -167,14 +167,14 @@ def resolve(ctx, incidentids):
 @inc.command(help="Snooze the incident(s) for the specified duration in seconds")
 @click.pass_context
 @click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
-@click.argument("incidentIDs", nargs=-1)
-def snooze(ctx, incidentIDs, duration):
+@click.argument("incidentids", nargs=-1)
+def snooze(ctx, incidentids, duration):
     pd = Incidents(ctx.obj)
     import datetime
 
     incs = pd.list()
-    incs = Filter.objects(incs, filters=Filter.inList("id", incidentIDs))
-    for id in incidentIDs:
+    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
+    for id in incidentids:
         print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
 
     pd.snooze(incs, duration)
@@ -187,7 +187,7 @@ def snooze(ctx, incidentIDs, duration):
 def reassign(ctx, incident, user):
     pd = Incidents(ctx.obj)
     incs = pd.list()
-    incs = Filter.objects(incs, filters=Filter.inList("id", incident))
+    incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
 
     users = Users(ctx.obj).userID_by_name(user)
     if users is None or len(users) == 0:
