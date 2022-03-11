@@ -1,6 +1,8 @@
+import subprocess
 from typing import Dict, List
 from rich import print
 from pdpyras import APISession, PDClientError
+import json
 
 
 class UnauthorizedException(Exception):
@@ -102,6 +104,22 @@ class Incidents(PD):
                 self.session.rput(f"/incidents/{i['id']}", json=new_inc)
             except Exception as e:
                 print(str(e))
+
+    def apply(self, incs: List, paths: List[str]) -> list:
+        rets = []
+        for script in paths:
+            process = subprocess.Popen(script, text=True, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            stdout, stderr = process.communicate(json.dumps(incs))
+            process.wait()
+
+            if process.returncode == 0:
+                output = json.loads(stdout)
+                if type(output) is not dict:
+                    output = {"output": str(output)}
+            else:
+                output = {"stderr": stderr}
+            rets.append({"script": script} | output)
+        return rets
 
 
 class Users(PD):
