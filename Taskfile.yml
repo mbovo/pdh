@@ -61,7 +61,7 @@ tasks:
   setup:
     desc: Bootstrap dev environment
     preconditions:
-      - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 > 8) }') = 1 ]"
+      - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 >= 8) }') = 1 ]"
         msg: "Required python version not found (>=3.8)"
     cmds:
       - task: pre-commit-setup
