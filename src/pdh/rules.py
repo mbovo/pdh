@@ -1,6 +1,13 @@
 import json
 import sys
 import functools
+import subprocess
+from typing import Union
+
+from collections import namedtuple
+from pdh import config, Incidents
+
+ShellResponse = namedtuple("ShellResponse", "stdout stderr rc")
 
 
 def __load_data_from_stdin():
@@ -35,6 +42,37 @@ def output(*args):
     pass
 
 
+def exec(cmd: Union[str, list(str)]) -> ShellResponse:
+    """
+    Runs any executable in a shell reeturning a ShellResponse(stdout,stderr,rc)
+      Parameters:
+        cmd (Union[str,list(str)]): Either a string or a list of strings with the command to run and its arguments
+      Returns:
+        ShellResponse: a namedtuple with three fields: stdout,stderr,rc with the relevant informations
+    """
+    p = subprocess.Popen(cmd, text=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    rc = p.returncode()
+    return ShellResponse(out, err, rc)
+
+
+def chain(incs: list(), path: str, pd: Incidents = None):
+    """
+    Chain loading another rule with the given list of incidents
+      Parameters:
+        incs (list): the list of incidents to pass through
+        path (str): the path of the binary to call
+        pd (Incidents): optional api instance, will be inistantiaed a brend new from default if not given
+      Returns:
+        A list of outputs
+    """
+
+    if pd is None:
+        pd = api()
+
+    return pd.apply_single(incs, path)
+
+
 def api(config_file: str = "~/.config/pdh.yaml"):
 
     """
@@ -44,7 +82,4 @@ def api(config_file: str = "~/.config/pdh.yaml"):
       Returns:
         Incidents (object): the api object capable of doing things
     """
-
-    from pdh import config, Incidents
-
     return Incidents(config.load_and_validate(config_file))
