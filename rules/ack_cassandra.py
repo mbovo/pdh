@@ -9,7 +9,14 @@ from pdh import rules, Filter
 @rules.rule
 def main(input):
 
+    # Initialiaze the PagerDuty' APIs
+    api = rules.api()
+
+    # From the given input extract onlfy incidents with the word cassandra in title
     incs = Filter.objects(input, filters=[Filter.regexp("title", ".*cassandra.*")])
+
+    # ackwnoledge all the filtered incidents
+    api.ack(incs)
 
     # if you return a dict will be rendered with each item as a column in a table
     # Othrwise will be converted as string
