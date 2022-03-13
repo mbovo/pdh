@@ -202,7 +202,8 @@ def reassign(ctx, incident, user):
 
 @inc.command(help="Apply scripts with sideeffects to given incident")
 @click.pass_context
-@click.option("-p", "--path", required=True, help="Subdirectory with scripts to run")
+@click.option("-p", "--path", required=False, default=None, help="Subdirectory with scripts to run")
+@click.option("-s", "--script", required=False, default=None, multiple=True, help="Single script to run")
 @click.argument("incident", nargs=-1)
 @click.option(
     "-o",
@@ -213,13 +214,18 @@ def reassign(ctx, incident, user):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def apply(ctx, incident, path, output):
+def apply(ctx, incident, path, output, script):
     pd = Incidents(ctx.obj)
     incs = pd.list()
     incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
-    scripts = []
-    for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
-        scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
+
+    # load the given parameters
+    scripts = script
+    # or cycle on every executable found in the given path
+    if path is not None:
+        scripts = []
+        for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
+            scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
 
     results = pd.apply(incs, scripts)
     print_items(results, output)

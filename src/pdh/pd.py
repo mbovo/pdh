@@ -108,18 +108,23 @@ class Incidents(PD):
     def apply(self, incs: List, paths: List[str]) -> list:
         rets = []
         for script in paths:
-            process = subprocess.Popen(script, text=True, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-            stdout, stderr = process.communicate(json.dumps(incs))
-            process.wait()
-
-            if process.returncode == 0:
-                output = json.loads(stdout)
-                if type(output) is not dict:
-                    output = {"output": str(output)}
-            else:
-                output = {"stderr": stderr}
+            output = self.apply_single(incs, script)
             rets.append({"script": script} | output)
         return rets
+
+    def apply_single(self, incs: List, script: str) -> Dict:
+        process = subprocess.Popen(script, text=True, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        stdout, stderr = process.communicate(json.dumps(incs))
+        process.wait()
+
+        if process.returncode == 0:
+            output = json.loads(stdout)
+            if type(output) is not dict:
+                output = {"output": str(output)}
+        else:
+            output = {"stderr": stderr}
+
+        return output
 
 
 class Users(PD):

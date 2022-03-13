@@ -73,6 +73,17 @@ class Filter(object):
         return f
 
     def regexp(field: str, regexp):
+        """
+        This is a filters operating on regular expression
+
+            Parameters:
+                field (str): Any dictionary field on which operate
+                regexp (str or regexp): The regular expression you would validate
+
+            Returns:
+                True if when regexp is found, false otherwise
+
+        """
         if type(regexp) is str:
             regexp = re.compile(regexp)
 
