@@ -42,7 +42,7 @@ def output(*args):
     pass
 
 
-def exec(cmd: Union[str, list(str)]) -> ShellResponse:
+def exec(cmd: Union[str, list]) -> ShellResponse:
     """
     Runs any executable in a shell reeturning a ShellResponse(stdout,stderr,rc)
       Parameters:
@@ -70,7 +70,12 @@ def chain(incs: list(), path: str, pd: Incidents = None):
     if pd is None:
         pd = api()
 
-    return pd.apply_single(incs, path)
+    ret = pd.apply_single(incs, path)
+    if "output" in ret:
+        return ret["output"]
+    if "stderr" in ret:
+        return ret["stderr"]
+    return None
 
 
 def api(config_file: str = "~/.config/pdh.yaml"):

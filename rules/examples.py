@@ -13,7 +13,7 @@ def main(input):
     api = rules.api()
 
     # From the given input extract only incidents with the word cassandra in title
-    incs = Filter.objects(input, filters=[Filter.regexp("title", ".*cassandra.*")])
+    incs = Filter.objects(input, filters=[Filter.regexp("title", ".*EC2.*")])
 
     # ackwnoledge all previously filtered incidents
     api.ack(incs)
@@ -26,7 +26,7 @@ def main(input):
 
     # # Chain a given rule, i.e call that rule with the output of this one
     # # chain-loading supports only a single binary, not directories
-    # rules.chain(incs, "./fancy_rule.py")
+    # c = rules.chain(incs, "rules/test_chaining.sh")
 
     # # Execute an external program and get the output/err/return code
     # p: rules.ShellResponse = rules.exec('kubectl get nodes -o name')
