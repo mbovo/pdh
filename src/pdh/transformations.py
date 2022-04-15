@@ -1,5 +1,7 @@
 from typing import Any
 from .pd import URGENCY_HIGH
+from datetime import datetime
+import humanize
 
 
 class Transformation(object):
@@ -13,12 +15,19 @@ class Transformation(object):
 
         return fun
 
+    def extract_date(item_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ"):
+        def extract(i: dict) -> str:
+            d = datetime.strptime(i[item_name], format)
+            return humanize.naturaltime(datetime.now() - d)
+
+        return extract
+
     def extract_field(
         item_name: str,
         colors: list = ["red", "cyan"],
         check_field: str = "urgency",
         check_value: str = URGENCY_HIGH,
-        check: bool = True,
+        check: bool = False,
     ):
         def extract(i: dict) -> str:
             if check:
