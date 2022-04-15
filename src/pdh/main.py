@@ -73,16 +73,34 @@ def user(ctx, config):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def user_list(ctx, output):
+@click.option(
+    "-f",
+    "--fields",
+    "fields",
+    help="Filter fields",
+    required=False,
+    type=str,
+    default=None,
+)
+def user_list(ctx, output, fields):
     try:
         u = Users(ctx.obj)
         users = u.list()
 
-        transformations = {}
-        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
-            transformations[t] = Transformation.extract_field(t, check=False)
-        transformations["teams"] = Transformation.extract_users_teams()
-        filtered = Filter.objects(users, transformations, [])
+        if fields is None:
+            fields = ["id", "name", "email", "time_zone", "role", "job_title", "teams"]
+        else:
+            fields = fields.split(",")
+
+        if output != "raw":
+            transformations = {}
+            for t in fields:
+                transformations[t] = Transformation.extract_field(t, check=False)
+            if "teams" in fields:
+                transformations["teams"] = Transformation.extract_users_teams()
+            filtered = Filter.objects(users, transformations, [])
+        else:
+            filtered = users
 
         print_items(filtered, output)
     except UnauthorizedException as e:
@@ -102,7 +120,16 @@ def user_list(ctx, output):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def user_get(ctx, user, output):
+@click.option(
+    "-f",
+    "--fields",
+    "fields",
+    help="Filter fields",
+    required=False,
+    type=str,
+    default=None,
+)
+def user_get(ctx, user, output, fields):
     try:
         u = Users(ctx.obj)
         # search by name
@@ -111,14 +138,22 @@ def user_get(ctx, user, output):
             # if empty search by ID
             users = u.search(user, "id")
 
-        # Prepare to filter and transform
-        transformations = {}
-        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
-            # extract these fields from the original API response
-            transformations[t] = Transformation.extract_field(t, check=False)
-        transformations["teams"] = Transformation.extract_users_teams()
+        if fields is None:
+            fields = ["id", "name", "email", "time_zone", "role", "job_title"]
+        else:
+            fields = fields.split(",")
 
-        filtered = Filter.objects(users, transformations, [])
+        # Prepare to filter and transform
+        if output != "raw":
+            transformations = {}
+            for t in fields:
+                # extract these fields from the original API response
+                transformations[t] = Transformation.extract_field(t, check=False)
+            transformations["teams"] = Transformation.extract_users_teams()
+
+            filtered = Filter.objects(users, transformations, [])
+        else:
+            filtered = users
 
         print_items(filtered, output)
     except UnauthorizedException as e:
