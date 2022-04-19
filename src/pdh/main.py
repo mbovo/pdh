@@ -293,7 +293,9 @@ def apply(ctx, incident, path, output, script):
     default="table",
 )
 @click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields):
+@click.option("--alerts", "alerts", required=False, help="Show alerts associated to each incidents", is_flag=True, default=False)
+@click.option("--alert-fields", "alert_fields", required=False, help="Show these alert fields only, comma separated", default=None)
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -328,6 +330,15 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
         else:
             fields = fields.lower().strip().split(",")
+        if alert_fields is None:
+            alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
+        else:
+            alert_fields = alert_fields.lower().strip().split(",")
+        if alerts:
+            for i in incs:
+                i["alerts"] = pd.alerts(i["id"])
+            fields.append("alerts")
+
         # Build filtered list for output
         if output != "raw":
             transformations = dict()
@@ -344,6 +355,8 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                     transformations[f] = Transformation.extract_field(f, check=True)
                 if f in ["created_at", "last_status_change_at"]:
                     transformations[f] = Transformation.extract_date(f)
+                if f in ["alerts"]:
+                    transformations[f] = Transformation.extract_alerts(f, alert_fields)
 
             filtered = Filter.objects(incs, transformations, filters=[Filter.regexp("title", filter_re)])
         else:

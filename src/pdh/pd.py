@@ -51,6 +51,10 @@ class Incidents(PD):
         """List all incidents assigned to the configured UserID"""
         return self.list([self.cfg["uid"]], statuses, urgencies)
 
+    def alerts(self, id: str) -> dict:
+        r = self.session.rget(f"/incidents/{id}/alerts")
+        return r
+
     def get(self, id: str) -> dict:
         """Retrieve a single incident by ID"""
         r = self.session.rget(f"/incidents/{id}")
