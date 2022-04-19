@@ -23,6 +23,7 @@ pdpyras = "^4.3.0"
 rich = "^10.10.0"
 PyYAML = "^5.4.1"
 humanize = "^4.0.0"
+jsonpath-ng = "^1.5.3"
 
 
 [tool.poetry.dev-dependencies]

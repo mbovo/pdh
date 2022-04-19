@@ -132,6 +132,14 @@ python-versions = ">=3.7"
 toml = ["tomli"]
 
 [[package]]
+name = "decorator"
+version = "5.1.1"
+description = "Decorators for Humans"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "dill"
 version = "0.3.4"
 description = "serialize all of python"
@@ -206,6 +214,19 @@ pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
 requirements_deprecated_finder = ["pipreqs", "pip-api"]
 colors = ["colorama (>=0.4.3,<0.5.0)"]
 plugins = ["setuptools"]
+
+[[package]]
+name = "jsonpath-ng"
+version = "1.5.3"
+description = "A final implementation of JSONPath for Python that aims to be standard compliant, including arithmetic and binary comparison operators and providing clear AST for metaprogramming."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+decorator = "*"
+ply = "*"
+six = "*"
 
 [[package]]
 name = "lazy-object-proxy"
@@ -285,6 +306,14 @@ python-versions = ">=3.6"
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
+
+[[package]]
+name = "ply"
+version = "3.11"
+description = "Python Lex & Yacc"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "py"
@@ -499,6 +528,14 @@ pygments = ">=2.6.0,<3.0.0"
 jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
 
 [[package]]
+name = "six"
+version = "1.16.0"
+description = "Python 2 and 3 compatibility utilities"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[[package]]
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
@@ -546,7 +583,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6ec036fb90426cbbabf1d7e29bf2d6e4160650705a4211d991d6b3709bdd25a2"
+content-hash = "b8bdb9f2cf38578ccb5697203060f4c9532f7d58d57fc1832f5fde1e101b77e0"
 
 [metadata.files]
 astroid = [
@@ -632,6 +669,10 @@ coverage = [
     {file = "coverage-6.3.2-pp36.pp37.pp38-none-any.whl", hash = "sha256:18d520c6860515a771708937d2f78f63cc47ab3b80cb78e86573b0a760161faf"},
     {file = "coverage-6.3.2.tar.gz", hash = "sha256:03e2a7826086b91ef345ff18742ee9fc47a6839ccd517061ef8fa1976e652ce9"},
 ]
+decorator = [
+    {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
+    {file = "decorator-5.1.1.tar.gz", hash = "sha256:637996211036b6385ef91435e4fae22989472f9d571faba8927ba8253acbc330"},
+]
 dill = [
     {file = "dill-0.3.4-py2.py3-none-any.whl", hash = "sha256:7e40e4a70304fd9ceab3535d36e58791d9c4a776b38ec7f7ec9afc8d3dca4d4f"},
     {file = "dill-0.3.4.zip", hash = "sha256:9f9734205146b2b353ab3fec9af0070237b6ddae78452af83d2fca84d739e675"},
@@ -659,6 +700,11 @@ iniconfig = [
 isort = [
     {file = "isort-5.10.1-py3-none-any.whl", hash = "sha256:6f62d78e2f89b4500b080fe3a81690850cd254227f27f75c3a0c491a1f351ba7"},
     {file = "isort-5.10.1.tar.gz", hash = "sha256:e8443a5e7a020e9d7f97f1d7d9cd17c88bcb3bc7e218bf9cf5095fe550be2951"},
+]
+jsonpath-ng = [
+    {file = "jsonpath-ng-1.5.3.tar.gz", hash = "sha256:a273b182a82c1256daab86a313b937059261b5c5f8c4fa3fc38b882b344dd567"},
+    {file = "jsonpath_ng-1.5.3-py2-none-any.whl", hash = "sha256:f75b95dbecb8a0f3b86fd2ead21c2b022c3f5770957492b9b6196ecccfeb10aa"},
+    {file = "jsonpath_ng-1.5.3-py3-none-any.whl", hash = "sha256:292a93569d74029ba75ac2dc3d3630fc0e17b2df26119a165fa1d498ca47bf65"},
 ]
 lazy-object-proxy = [
     {file = "lazy-object-proxy-1.7.1.tar.gz", hash = "sha256:d609c75b986def706743cdebe5e47553f4a5a1da9c5ff66d76013ef396b5a8a4"},
@@ -725,6 +771,10 @@ platformdirs = [
 pluggy = [
     {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
+]
+ply = [
+    {file = "ply-3.11-py2.py3-none-any.whl", hash = "sha256:096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce"},
+    {file = "ply-3.11.tar.gz", hash = "sha256:00c7c1aaa88358b9c765b6d3000c6eec0ba42abca5351b095321aef446081da3"},
 ]
 py = [
     {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
@@ -816,6 +866,10 @@ requests = [
 rich = [
     {file = "rich-10.16.2-py3-none-any.whl", hash = "sha256:c59d73bd804c90f747c8d7b1d023b88f2a9ac2454224a4aeaf959b21eeb42d03"},
     {file = "rich-10.16.2.tar.gz", hash = "sha256:720974689960e06c2efdb54327f8bf0cdbdf4eae4ad73b6c94213cad405c371b"},
+]
+six = [
+    {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
+    {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
