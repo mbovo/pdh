@@ -1,13 +1,12 @@
 import click
 import pkg_resources
-import yaml
-import json
 import sys
 import re
 import os
+import time
 from rich import print
-from rich.table import Table
 from rich.console import Console
+from .core import PDH
 
 from .pd import Users, UnauthorizedException, Incidents
 from .pd import (
@@ -19,11 +18,8 @@ from .pd import (
 )
 from .transformations import Transformation
 from .filters import Filter
-
-import time
 from .config import load_and_validate, setup_config
-
-VALID_OUTPUTS = ["plain", "table", "json", "yaml", "raw"]
+from .output import print_items, VALID_OUTPUTS
 
 
 @click.group(help="PDH - PagerDuty for Humans")
@@ -83,28 +79,7 @@ def user(ctx, config):
     default=None,
 )
 def user_list(ctx, output, fields):
-    try:
-        u = Users(ctx.obj)
-        users = u.list()
-
-        if fields is None:
-            fields = ["id", "name", "email", "time_zone", "role", "job_title", "teams"]
-        else:
-            fields = fields.split(",")
-
-        if output != "raw":
-            transformations = {}
-            for t in fields:
-                transformations[t] = Transformation.extract_field(t, check=False)
-            if "teams" in fields:
-                transformations["teams"] = Transformation.extract_users_teams()
-            filtered = Filter.objects(users, transformations, [])
-        else:
-            filtered = users
-
-        print_items(filtered, output)
-    except UnauthorizedException as e:
-        print(f"[red]{e}[/red]")
+    if not PDH.list_user(ctx.obj, output, fields):
         sys.exit(1)
 
 
@@ -130,34 +105,7 @@ def user_list(ctx, output, fields):
     default=None,
 )
 def user_get(ctx, user, output, fields):
-    try:
-        u = Users(ctx.obj)
-        # search by name
-        users = u.search(user)
-        if len(users) == 0:
-            # if empty search by ID
-            users = u.search(user, "id")
-
-        if fields is None:
-            fields = ["id", "name", "email", "time_zone", "role", "job_title"]
-        else:
-            fields = fields.split(",")
-
-        # Prepare to filter and transform
-        if output != "raw":
-            transformations = {}
-            for t in fields:
-                # extract these fields from the original API response
-                transformations[t] = Transformation.extract_field(t, check=False)
-            transformations["teams"] = Transformation.extract_users_teams()
-
-            filtered = Filter.objects(users, transformations, [])
-        else:
-            filtered = users
-
-        print_items(filtered, output)
-    except UnauthorizedException as e:
-        print(f"[red]{e}[/red]")
+    if not PDH.get_user(ctx.obj, user, output, fields):
         sys.exit(1)
 
 
@@ -180,24 +128,14 @@ def inc(ctx, config):
 @click.pass_context
 @click.argument("incidentids", nargs=-1)
 def ack(ctx, incidentids):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
-    for id in incidentids:
-        print(f"Mark {id} as [yellow]ACK[/yellow]")
-    pd.ack(incs)
+    PDH.ack(ctx.obj, incidentids)
 
 
 @inc.command(help="Resolve specific incidents IDs")
 @click.pass_context
 @click.argument("incidentids", nargs=-1)
 def resolve(ctx, incidentids):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
-    for id in incidentids:
-        print(f"Mark {id} as [green]RESOLVED[/green]")
-    pd.resolve(incs)
+    PDH.resolve(ctx.obj, incidentids)
 
 
 @inc.command(help="Snooze the incident(s) for the specified duration in seconds")
@@ -205,15 +143,7 @@ def resolve(ctx, incidentids):
 @click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
 @click.argument("incidentids", nargs=-1)
 def snooze(ctx, incidentids, duration):
-    pd = Incidents(ctx.obj)
-    import datetime
-
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
-    for id in incidentids:
-        print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
-
-    pd.snooze(incs, duration)
+    PDH.snooze(ctx.obj, incidentids, duration)
 
 
 @inc.command(help="Re-assign the incident(s) to the specified user")
@@ -221,18 +151,7 @@ def snooze(ctx, incidentids, duration):
 @click.option("-u", "--user", required=True, help="User name or email to assign to (fuzzy find!)")
 @click.argument("incident", nargs=-1)
 def reassign(ctx, incident, user):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
-
-    users = Users(ctx.obj).userID_by_name(user)
-    if users is None or len(users) == 0:
-        users = Users(ctx.obj).userID_by_name(user)
-
-    for id in incident:
-        print(f"Reassign incident {id} to {users}")
-
-    pd.reassign(incs, users)
+    PDH.reassing(ctx.obj, incident, user)
 
 
 @inc.command(help="Apply scripts with sideeffects to given incident")
@@ -400,34 +319,3 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             break
         time.sleep(timeout)
         console.clear()
-
-
-def print_items(items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console()) -> None:
-
-    if output == "plain":
-        for i in items:
-            if plain_print_f:
-                plain_print_f(i)
-            else:
-                console.print(i)
-    elif output == "raw":
-        console.print(items)
-    elif output == "yaml":
-        console.print(yaml.safe_dump(items))
-    elif output == "json":
-        console.print(json.dumps(items))
-    elif output == "table" and len(items) > 0:
-        table = Table(show_header=True, header_style="bold magenta")
-        for k, _ in items[0].items():
-            if k not in skip_columns:
-                table.add_column(k)
-        i = 0
-        for u in items:
-            args = [v for k, v in u.items() if k not in skip_columns]
-            if i % 2:
-                table.add_row(*args, style="grey93 on black")
-            else:
-                table.add_row(*args, style="grey50 on black")
-            i += 1
-
-        console.print(table)
