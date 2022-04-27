@@ -8,7 +8,7 @@ from rich import print
 from rich.console import Console
 from .core import PDH
 
-from .pd import Users, UnauthorizedException, Incidents
+from .pd import Users, Incidents
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,

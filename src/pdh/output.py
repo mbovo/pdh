@@ -1,4 +1,3 @@
-from typing import Any
 import yaml
 import json
 from rich.table import Table
@@ -9,53 +8,58 @@ VALID_OUTPUTS = ["plain", "table", "json", "yaml", "raw"]
 
 
 class Output(object):
-    def plain(
-        items: list, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
-    ) -> None:
+    def plain(self, **kwargs) -> None:
+        items = kwargs["items"] if "items" in kwargs else []
+        plain_print_f = kwargs["print_f"] if "print_f" in kwargs else None
+        console = kwargs["console"] if "console" in kwargs else Console()
         for i in items:
             if plain_print_f:
                 plain_print_f(i)
             else:
                 console.print(i)
 
-    def raw(
-        items: list, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
-    ) -> None:
+    def raw(self, **kwargs) -> None:
+        items = kwargs["items"] if "items" in kwargs else []
+        console = kwargs["console"] if "console" in kwargs else Console()
         console.print(items)
 
-    def yaml(
-        items: list, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
-    ) -> None:
+    def yaml(self, **kwargs) -> None:
+        items = kwargs["items"] if "items" in kwargs else []
+        console = kwargs["console"] if "console" in kwargs else Console()
         console.print(yaml.safe_dump(items))
 
-    def json(
-        items: list, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
-    ) -> None:
+    def json(self, **kwargs) -> None:
+        items = kwargs["items"] if "items" in kwargs else []
+        console = kwargs["console"] if "console" in kwargs else Console()
         console.print(json.dumps(items))
 
-    def table(items: list, skip_columns: list = [], console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black") -> None:
+    def table(self, **kwargs) -> None:
+        items = kwargs["items"] if "items" in kwargs else []
+        console = kwargs["console"] if "console" in kwargs else Console()
+        skip_columns = kwargs["skip_columns"] if "skip_columns" in kwargs else []
+        odd_color = kwargs["odd_color"] if "odd_color" in kwargs else "grey93 on black"
+        even_color = kwargs["even_color"] if "even_color" in kwargs else "grey50 on black"
+
         if len(items) > 0:
-            table = Table(show_header=True, header_style="bold magenta")
+            t = Table(show_header=True, header_style="bold magenta")
             for k, _ in items[0].items():
                 if k not in skip_columns:
-                    table.add_column(k)
+                    t.add_column(k)
             i = 0
             for u in items:
                 args = [v for k, v in u.items() if k not in skip_columns]
                 if i % 2:
-                    table.add_row(*args, style=odd_color)
+                    t.add_row(*args, style=odd_color)
                 else:
-                    table.add_row(*args, style=even_color)
+                    t.add_row(*args, style=even_color)
                 i += 1
-            console.print(table)
+            console.print(t)
 
 
 def print_items(
     items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
 ) -> None:
-    out = Output()
-    m = getattr(out, output)
-    m(items, skip_columns, plain_print_f, console, odd_color, even_color)
+    getattr(Output(), output)(items=items, skip_columns=skip_columns, print_f=plain_print_f, console=console, odd_color=odd_color, even_color=even_color)
 
 
 def print(*args, **kwargs):
