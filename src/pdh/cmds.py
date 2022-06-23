@@ -41,7 +41,7 @@ def list_incidents(cfg, userid, status, urgencies, alerts, output, filter_re, fi
             if f in ["alerts"]:
                 transformations[f] = Transformation.extract_alerts(f, alert_fields)
 
-        filtered = Filter.objects(incs, transformations, filters=[Filter.regexp("title", filter_re)])
+        filtered = Filter.do(incs, transformations, filters=[Filter.regexp("title", filter_re)])
     else:
         # raw output, using json format
         filtered = incs

@@ -94,7 +94,7 @@ class Filter(object):
 
         return f
 
-    def objects(objects: list, transformations: dict = None, filters: list = []) -> list:
+    def do(objects: list, transformations: dict = None, filters: list = []) -> list:
         """Given a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
                         function to used to extract values from the original list (see Transformation class)

@@ -13,7 +13,7 @@ def main(input):
     api = rules.api()
 
     # From the given input extract only incidents with the word cassandra in title
-    incs = Filter.objects(input, filters=[Filter.regexp("title", ".*EC2.*")])
+    incs = Filter.do(input, filters=[Filter.regexp("title", ".*EC2.*")])
 
     # ackwnoledge all previously filtered incidents
     api.ack(incs)

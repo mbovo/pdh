@@ -24,7 +24,7 @@ class PDH(object):
                     t[f] = Transformation.extract_field(f, check=False)
                 if "teams" in fields:
                     t["teams"] = Transformation.extract_users_teams()
-                filtered = Filter.objects(users, t, [])
+                filtered = Filter.do(users, t, [])
 
             print_items(filtered, output)
             return True
@@ -54,7 +54,7 @@ class PDH(object):
                     transformations[t] = Transformation.extract_field(t, check=False)
                 transformations["teams"] = Transformation.extract_users_teams()
 
-                filtered = Filter.objects(users, transformations, [])
+                filtered = Filter.do(users, transformations, [])
 
             print_items(filtered, output)
             return True
@@ -65,17 +65,17 @@ class PDH(object):
     def ack(cfg: Config, incIDs: list = []) -> None:
         pd = Incidents(cfg)
         incs = pd.list()
-        incs = Filter.objects(incs, filters=[Filter.inList("id", incIDs)])
-        for id in incIDs:
-            print(f"[yellow]✔[/yellow] {id}")
+        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
+        for i in incs:
+            print(f"[yellow]✔[/yellow] {i['id']} [grey50]{i['title']}[/grey50]")
         pd.ack(incs)
 
     def resolve(cfg: Config, incIDs: list = []) -> None:
         pd = Incidents(cfg)
         incs = pd.list()
-        incs = Filter.objects(incs, filters=[Filter.inList("id", incIDs)])
-        for id in incIDs:
-            print(f"[green]✅[/green] {id}")
+        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
+        for i in incs:
+            print(f"[green]✅[/green] {i['id']} [grey50]{i['title']}[/grey50]")
         pd.resolve(incs)
 
     def snooze(cfg: Config, incIDs: list = [], duration: int = 14400) -> None:
@@ -83,7 +83,7 @@ class PDH(object):
         import datetime
 
         incs = pd.list()
-        incs = Filter.objects(incs, filters=[Filter.inList("id", incIDs)])
+        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
         for id in incIDs:
             print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
 
@@ -92,7 +92,7 @@ class PDH(object):
     def reassing(cfg: Config, incIDs: list = [], user: str = None):
         pd = Incidents(cfg)
         incs = pd.list()
-        incs = Filter.objects(incs, filters=[Filter.inList("id", incIDs)])
+        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
 
         users = Users(cfg).userID_by_name(user)
         if users is None or len(users) == 0:

@@ -171,7 +171,7 @@ def reassign(ctx, incident, user):
 def apply(ctx, incident, path, output, script):
     pd = Incidents(ctx.obj)
     incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
+    incs = Filter.do(incs, filters=[Filter.inList("id", incident)])
 
     # load the given parameters
     scripts = script
@@ -279,7 +279,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 if f in ["alerts"]:
                     transformations[f] = Transformation.extract_alerts(f, alert_fields)
 
-            filtered = Filter.objects(incs, transformations, filters=[Filter.regexp("title", filter_re)])
+            filtered = Filter.do(incs, transformations, filters=[Filter.regexp("title", filter_re)])
         else:
             # raw output, using json format
             filtered = incs
