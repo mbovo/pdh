@@ -29,14 +29,19 @@ class Transformation(object):
         check_field: str = "urgency",
         check_value: str = URGENCY_HIGH,
         check: bool = False,
+        change_dict: dict = None,
     ):
         def extract(i: dict) -> str:
+            item = i[item_name]
+            if change_dict is not None:
+                if i[item_name] in change_dict.keys():
+                    item = change_dict[i[item_name]]
             if check:
                 if i[check_field] == check_value:
-                    return f"[{colors[0]}]{i[item_name]}[/{colors[0]}]"
-                return f"[{colors[1]}]{i[item_name]}[/{colors[1]}]"
+                    return f"[{colors[0]}]{item}[/{colors[0]}]"
+                return f"[{colors[1]}]{item}[/{colors[1]}]"
             else:
-                return f"{i[item_name]}"
+                return f"{item}"
 
         return extract
 

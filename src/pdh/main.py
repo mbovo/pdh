@@ -245,14 +245,16 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         userid = pd.cfg["uid"]
     while True:
         incs = pd.list(userid, statuses=status, urgencies=urgencies)
-        if fields is None:
-            fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
-        else:
+        if fields is str:
             fields = fields.lower().strip().split(",")
-        if alert_fields is None:
-            alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
         else:
+            fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
+
+        if alert_fields is str:
             alert_fields = alert_fields.lower().strip().split(",")
+
+        else:
+            alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
         if alerts:
             for i in incs:
                 i["alerts"] = pd.alerts(i["id"])
@@ -267,7 +269,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 if f == "assignee":
                     transformations[f] = Transformation.extract_assignees()
                 if f == "status":
-                    transformations[f] = Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True)
+                    transformations[f] = Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True, {STATUS_ACK: "✔", STATUS_TRIGGERED: "✘"})
                 if f == "url":
                     transformations[f] = Transformation.extract_field("html_url")
                 if f in ["title", "urgency"]:

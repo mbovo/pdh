@@ -67,7 +67,7 @@ class PDH(object):
         incs = pd.list()
         incs = Filter.objects(incs, filters=[Filter.inList("id", incIDs)])
         for id in incIDs:
-            print(f"Mark {id} as [yellow]ACK[/yellow]")
+            print(f"[yellow]✔[/yellow] {id}")
         pd.ack(incs)
 
     def resolve(cfg: Config, incIDs: list = []) -> None:
@@ -75,7 +75,7 @@ class PDH(object):
         incs = pd.list()
         incs = Filter.objects(incs, filters=[Filter.inList("id", incIDs)])
         for id in incIDs:
-            print(f"Mark {id} as [green]RESOLVED[/green]")
+            print(f"[green]✅[/green] {id}")
         pd.resolve(incs)
 
     def snooze(cfg: Config, incIDs: list = [], duration: int = 14400) -> None:
