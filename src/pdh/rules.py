@@ -52,7 +52,7 @@ def exec(cmd: Union[str, list]) -> ShellResponse:
     """
     p = subprocess.Popen(cmd, text=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
-    rc = p.returncode()
+    rc = p.returncode
     return ShellResponse(out, err, rc)
 
 

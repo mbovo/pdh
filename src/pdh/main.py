@@ -1,15 +1,14 @@
 import click
 import pkg_resources
-import yaml
-import json
 import sys
 import re
 import os
+import time
 from rich import print
-from rich.table import Table
 from rich.console import Console
+from .core import PDH
 
-from .pd import Users, UnauthorizedException, Incidents
+from .pd import Users, Incidents
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
@@ -19,11 +18,8 @@ from .pd import (
 )
 from .transformations import Transformation
 from .filters import Filter
-
-import time
 from .config import load_and_validate, setup_config
-
-VALID_OUTPUTS = ["plain", "table", "json", "yaml", "raw"]
+from .output import print_items, VALID_OUTPUTS
 
 
 @click.group(help="PDH - PagerDuty for Humans")
@@ -73,20 +69,17 @@ def user(ctx, config):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def user_list(ctx, output):
-    try:
-        u = Users(ctx.obj)
-        users = u.list()
-
-        transformations = {}
-        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
-            transformations[t] = Transformation.extract_field(t, check=False)
-        transformations["teams"] = Transformation.extract_users_teams()
-        filtered = Filter.objects(users, transformations, [])
-
-        print_items(filtered, output)
-    except UnauthorizedException as e:
-        print(f"[red]{e}[/red]")
+@click.option(
+    "-f",
+    "--fields",
+    "fields",
+    help="Filter fields",
+    required=False,
+    type=str,
+    default=None,
+)
+def user_list(ctx, output, fields):
+    if not PDH.list_user(ctx.obj, output, fields):
         sys.exit(1)
 
 
@@ -102,27 +95,17 @@ def user_list(ctx, output):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def user_get(ctx, user, output):
-    try:
-        u = Users(ctx.obj)
-        # search by name
-        users = u.search(user)
-        if len(users) == 0:
-            # if empty search by ID
-            users = u.search(user, "id")
-
-        # Prepare to filter and transform
-        transformations = {}
-        for t in ["id", "name", "email", "time_zone", "role", "job_title"]:
-            # extract these fields from the original API response
-            transformations[t] = Transformation.extract_field(t, check=False)
-        transformations["teams"] = Transformation.extract_users_teams()
-
-        filtered = Filter.objects(users, transformations, [])
-
-        print_items(filtered, output)
-    except UnauthorizedException as e:
-        print(f"[red]{e}[/red]")
+@click.option(
+    "-f",
+    "--fields",
+    "fields",
+    help="Filter fields",
+    required=False,
+    type=str,
+    default=None,
+)
+def user_get(ctx, user, output, fields):
+    if not PDH.get_user(ctx.obj, user, output, fields):
         sys.exit(1)
 
 
@@ -145,24 +128,14 @@ def inc(ctx, config):
 @click.pass_context
 @click.argument("incidentids", nargs=-1)
 def ack(ctx, incidentids):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
-    for id in incidentids:
-        print(f"Mark {id} as [yellow]ACK[/yellow]")
-    pd.ack(incs)
+    PDH.ack(ctx.obj, incidentids)
 
 
 @inc.command(help="Resolve specific incidents IDs")
 @click.pass_context
 @click.argument("incidentids", nargs=-1)
 def resolve(ctx, incidentids):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
-    for id in incidentids:
-        print(f"Mark {id} as [green]RESOLVED[/green]")
-    pd.resolve(incs)
+    PDH.resolve(ctx.obj, incidentids)
 
 
 @inc.command(help="Snooze the incident(s) for the specified duration in seconds")
@@ -170,15 +143,7 @@ def resolve(ctx, incidentids):
 @click.option("-d", "--duration", required=False, default=14400, help="Duration of snooze in seconds")
 @click.argument("incidentids", nargs=-1)
 def snooze(ctx, incidentids, duration):
-    pd = Incidents(ctx.obj)
-    import datetime
-
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incidentids)])
-    for id in incidentids:
-        print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
-
-    pd.snooze(incs, duration)
+    PDH.snooze(ctx.obj, incidentids, duration)
 
 
 @inc.command(help="Re-assign the incident(s) to the specified user")
@@ -186,18 +151,7 @@ def snooze(ctx, incidentids, duration):
 @click.option("-u", "--user", required=True, help="User name or email to assign to (fuzzy find!)")
 @click.argument("incident", nargs=-1)
 def reassign(ctx, incident, user):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
-
-    users = Users(ctx.obj).userID_by_name(user)
-    if users is None or len(users) == 0:
-        users = Users(ctx.obj).userID_by_name(user)
-
-    for id in incident:
-        print(f"Reassign incident {id} to {users}")
-
-    pd.reassign(incs, users)
+    PDH.reassing(ctx.obj, incident, user)
 
 
 @inc.command(help="Apply scripts with sideeffects to given incident")
@@ -217,7 +171,8 @@ def reassign(ctx, incident, user):
 def apply(ctx, incident, path, output, script):
     pd = Incidents(ctx.obj)
     incs = pd.list()
-    incs = Filter.objects(incs, filters=[Filter.inList("id", incident)])
+    if incident:
+        incs = Filter.do(incs, filters=[Filter.inList("id", incident)])
 
     # load the given parameters
     scripts = script
@@ -227,8 +182,16 @@ def apply(ctx, incident, path, output, script):
         for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
             scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
 
-    results = pd.apply(incs, scripts)
-    print_items(results, output)
+    ret = pd.apply(incs, scripts)
+    for rule in ret:
+        print("[green]Applied rule:[/green]", rule["script"])
+        if "error" in rule:
+            print("[red]Error:[/red]", rule["error"])
+        else:
+            if type(rule["output"]) is not str:
+                print_items(rule["output"], output)
+            else:
+                print(rule["output"])
 
     pass
 
@@ -245,7 +208,6 @@ def apply(ctx, incident, path, output, script):
 @click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
 @click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
-@click.option("--raw", is_flag=True, default=False, help="output raw data from Pagerduty APIs")
 @click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
 @click.option("--rules-path", required=False, default="~/.config/pdh_rules", help="Apply all executable find in this path")
 @click.option("-R", "--regexp", default="", help="regexp to filter incidents")
@@ -258,7 +220,10 @@ def apply(ctx, incident, path, output, script):
     type=click.Choice(VALID_OUTPUTS),
     default="table",
 )
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, raw, regexp, apply, rules_path):
+@click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
+@click.option("--alerts", "alerts", required=False, help="Show alerts associated to each incidents", is_flag=True, default=False)
+@click.option("--alert-fields", "alert_fields", required=False, help="Show these alert fields only, comma separated", default=None)
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -283,12 +248,63 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     incs = []
     pd = Incidents(ctx.obj)
     console = Console()
-    while True:
-        if everything or userid:
-            incs = pd.list(userid, statuses=status, urgencies=urgencies)
-        else:
-            incs = pd.mine(statuses=status, urgencies=urgencies)
+    # fallback to configured userid
 
+    if not everything and not userid:
+        userid = pd.cfg["uid"]
+    while True:
+        incs = pd.list(userid, statuses=status, urgencies=urgencies)
+        # BUGFIX: filter by regexp must be applyed to the original list, not only to the transformed one
+        incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
+        if type(fields) is str:
+            fields = fields.lower().strip().split(",")
+        else:
+            fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
+
+        if type(alert_fields) is str:
+            alert_fields = alert_fields.lower().strip().split(",")
+
+        else:
+            alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
+        if alerts:
+            for i in incs:
+                i["alerts"] = pd.alerts(i["id"])
+            fields.append("alerts")
+
+        # Build filtered list for output
+        if output != "raw":
+            transformations = dict()
+            for f in fields:
+                transformations[f] = Transformation.extract_field(f)
+                # special cases
+                if f == "assignee":
+                    transformations[f] = Transformation.extract_assignees()
+                if f == "status":
+                    transformations[f] = Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True, {STATUS_ACK: "✔", STATUS_TRIGGERED: "✘"})
+                if f == "url":
+                    transformations[f] = Transformation.extract_field("html_url")
+                if f in ["title", "urgency"]:
+                    transformations[f] = Transformation.extract_field(f, check=True)
+                if f in ["created_at", "last_status_change_at"]:
+                    transformations[f] = Transformation.extract_date(f)
+                if f in ["alerts"]:
+                    transformations[f] = Transformation.extract_alerts(f, alert_fields)
+
+            filtered = Filter.do(incs, transformations)
+        else:
+            # raw output, using json format
+            filtered = incs
+
+        # define here how print in "plain" way (ie if output=plain)
+        def plain_print_f(i):
+            s = ""
+            for f in fields:
+                s += f"{i[f]}\t"
+            print(s)
+
+        print_items(filtered, output, plain_print_f=plain_print_f)
+
+        # now apply actions like snooze, resolve, ack...
         ids = [i["id"] for i in incs]
         if snooze:
             pd.snooze(incs)
@@ -310,64 +326,18 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(rules_path))):
                 scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
             ret = pd.apply(incs, scripts)
-            print_items(ret, output)
 
-        # Build filtered list for output
-        if raw:
-            filtered = incs
-            # Switch to raw output if you choose table or plain
-            if output in ["plain", "table"]:
-                output = "raw"
-        else:
-            transformations = {
-                "id": Transformation.extract_field("id", check=False),
-                "assignee": Transformation.extract_assignees(),
-                "urgency": Transformation.extract_field("urgency"),
-                "title": Transformation.extract_field("title"),
-                "status": Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True),
-                "url": Transformation.extract_field("html_url", check=False),
-                # TODO: compose this dict dynamically with interesting Transformations instead of filtering out the output
-                # 'pending_actions': Transformation.extract_pending_actions(),
-                # 'created_at': Transformation.extract_field('created_at', check=False)
-            }
-            filtered = Filter.objects(incs, transformations, filters=[Filter.regexp("title", filter_re)])
+            for rule in ret:
+                print("[green]Applied rule:[/green]", rule["script"])
+                if "error" in rule:
+                    print("[red]Error:[/red]", rule["error"])
+                else:
+                    if type(rule["output"]) is not str:
+                        print_items(rule["output"], output)
+                    else:
+                        print(rule["output"])
 
-        def plain_print(i):
-            print(f"{i['assignee']}\t{i['status']}\t{i['title']}\t{i['url']}")
-
-        print_items(filtered, output, plain_print_f=plain_print)
         if not watch:
             break
         time.sleep(timeout)
         console.clear()
-
-
-def print_items(items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console()) -> None:
-
-    if output == "plain":
-        for i in items:
-            if plain_print_f:
-                plain_print_f(i)
-            else:
-                console.print(i)
-    elif output == "raw":
-        console.print(items)
-    elif output == "yaml":
-        console.print(yaml.safe_dump(items))
-    elif output == "json":
-        console.print(json.dumps(items))
-    elif output == "table" and len(items) > 0:
-        table = Table(show_header=True, header_style="bold magenta")
-        for k, _ in items[0].items():
-            if k not in skip_columns:
-                table.add_column(k)
-        i = 0
-        for u in items:
-            args = [v for k, v in u.items() if k not in skip_columns]
-            if i % 2:
-                table.add_row(*args, style="grey93 on black")
-            else:
-                table.add_row(*args, style="grey50 on black")
-            i += 1
-
-        console.print(table)

@@ -51,6 +51,10 @@ class Incidents(PD):
         """List all incidents assigned to the configured UserID"""
         return self.list([self.cfg["uid"]], statuses, urgencies)
 
+    def alerts(self, id: str) -> dict:
+        r = self.session.rget(f"/incidents/{id}/alerts")
+        return r
+
     def get(self, id: str) -> dict:
         """Retrieve a single incident by ID"""
         r = self.session.rget(f"/incidents/{id}")
@@ -119,10 +123,12 @@ class Incidents(PD):
 
         if process.returncode == 0:
             output = json.loads(stdout)
-            if type(output) is not dict:
+            if type(output) not in [dict, list, tuple]:
                 output = {"output": str(output)}
+            else:
+                output = {"output": output}
         else:
-            output = {"stderr": stderr}
+            output = {"error": stderr}
 
         return output
 
