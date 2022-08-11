@@ -33,9 +33,9 @@ def main(input):
     # if p.rc > 0:
     #     nodes = p.stdout.split("\n")
 
-    # if you return a dict will be rendered with each item as a column in a table
+    # if you return a list of dicts, it will be rendered with each item as a row in a table
     # Othrwise will be converted as string
-    return {i["id"]: i["summary"] for i in incs}
+    return incs
 
 
 if __name__ == "__main__":

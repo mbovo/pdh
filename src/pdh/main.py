@@ -171,7 +171,8 @@ def reassign(ctx, incident, user):
 def apply(ctx, incident, path, output, script):
     pd = Incidents(ctx.obj)
     incs = pd.list()
-    incs = Filter.do(incs, filters=[Filter.inList("id", incident)])
+    if incident:
+        incs = Filter.do(incs, filters=[Filter.inList("id", incident)])
 
     # load the given parameters
     scripts = script
@@ -181,8 +182,16 @@ def apply(ctx, incident, path, output, script):
         for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
             scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
 
-    results = pd.apply(incs, scripts)
-    print_items(results, output)
+    ret = pd.apply(incs, scripts)
+    for rule in ret:
+        print("[green]Applied rule:[/green]", rule["script"])
+        if "error" in rule:
+            print("[red]Error:[/red]", rule["error"])
+        else:
+            if type(rule["output"]) is not str:
+                print_items(rule["output"], output)
+            else:
+                print(rule["output"])
 
     pass
 
