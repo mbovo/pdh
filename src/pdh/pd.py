@@ -123,10 +123,12 @@ class Incidents(PD):
 
         if process.returncode == 0:
             output = json.loads(stdout)
-            if type(output) is not dict:
+            if type(output) not in [dict, list, tuple]:
                 output = {"output": str(output)}
+            else:
+                output = {"output": output}
         else:
-            output = {"stderr": stderr}
+            output = {"error": stderr}
 
         return output
 

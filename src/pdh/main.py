@@ -245,6 +245,8 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         userid = pd.cfg["uid"]
     while True:
         incs = pd.list(userid, statuses=status, urgencies=urgencies)
+        # BUGFIX: filter by regexp must be applyed to the original list, not only to the transformed one
+        incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
         if type(fields) is str:
             fields = fields.lower().strip().split(",")
         else:
@@ -279,7 +281,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 if f in ["alerts"]:
                     transformations[f] = Transformation.extract_alerts(f, alert_fields)
 
-            filtered = Filter.do(incs, transformations, filters=[Filter.regexp("title", filter_re)])
+            filtered = Filter.do(incs, transformations)
         else:
             # raw output, using json format
             filtered = incs
@@ -315,7 +317,16 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(rules_path))):
                 scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
             ret = pd.apply(incs, scripts)
-            print_items(ret, output)
+
+            for rule in ret:
+                print("[green]Applied rule:[/green]", rule["script"])
+                if "error" in rule:
+                    print("[red]Error:[/red]", rule["error"])
+                else:
+                    if type(rule["output"]) is not str:
+                        print_items(rule["output"], output)
+                    else:
+                        print(rule["output"])
 
         if not watch:
             break
