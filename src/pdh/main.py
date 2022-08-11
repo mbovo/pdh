@@ -323,10 +323,16 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                     print(f"Marked {i} as [yellow]ACK[/yellow]")
         if apply:
             scripts = []
-            for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(rules_path))):
-                scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
-            ret = pd.apply(incs, scripts)
+            ppath = os.path.expanduser(os.path.expandvars(rules_path))
+            for root, _, filenames in os.walk(ppath):
+                for filename in filenames:
+                    fullpath = os.path.join(root, filename)
+                    if os.access(fullpath, os.X_OK):
+                        scripts.append(fullpath)
 
+            if len(scripts) == 0:
+                print(f"[yellow]No rules found in {ppath}[/yellow]")
+            ret = pd.apply(incs, scripts)
             for rule in ret:
                 print("[green]Applied rule:[/green]", rule["script"])
                 if "error" in rule:
