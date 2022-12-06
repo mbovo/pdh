@@ -6,11 +6,11 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - uses: pre-commit/action@v2.0.3
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        python-version: '3.9'
+    - uses: pre-commit/action@v3.0.0
   tagging:
     name: "Tagging (dry-run)"
     needs: pre-commit
@@ -18,7 +18,7 @@ jobs:
     outputs:
       net_tag: ${{ steps.tag_version.outputs.new_tag }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v5.6
@@ -30,8 +30,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
       - uses: arduino/setup-task@v1
       - name: Prepare dev env
         run: task setup
@@ -46,9 +48,10 @@ jobs:
       - pre-commit
       - tagging
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
       - uses: arduino/setup-task@v1
       - run: task setup
       - run: |
@@ -64,7 +67,7 @@ jobs:
     env:
       IMAGE_NAME: jackbit/pdh
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
