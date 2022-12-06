@@ -11,8 +11,6 @@ jobs:
       with:
         python-version: '3.9'
     - uses: pre-commit/action@v3.0.0
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
   tagging:
     name: "Tagging (dry-run)"
     needs: pre-commit
