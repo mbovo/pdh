@@ -306,6 +306,11 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
         # now apply actions like snooze, resolve, ack...
         ids = [i["id"] for i in incs]
+        if ack:
+            pd.ack(incs)
+            if output not in ["yaml", "json"]:
+                for i in ids:
+                    print(f"Marked {i} as [yellow]ACK[/yellow]")
         if snooze:
             pd.snooze(incs)
             if output not in ["yaml", "json"]:
@@ -316,11 +321,6 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Mark {i} as [green]RESOLVED[/green]")
-        if ack:
-            pd.ack(incs)
-            if output not in ["yaml", "json"]:
-                for i in ids:
-                    print(f"Marked {i} as [yellow]ACK[/yellow]")
         if apply:
             scripts = []
             ppath = os.path.expanduser(os.path.expandvars(rules_path))
