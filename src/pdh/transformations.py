@@ -1,7 +1,6 @@
 from typing import Any
 from .pd import URGENCY_HIGH
 from datetime import datetime
-import humanize
 from rich.pretty import pretty_repr
 
 
@@ -19,7 +18,17 @@ class Transformation(object):
     def extract_date(item_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ"):
         def extract(i: dict) -> str:
             d = datetime.strptime(i[item_name], format)
-            return humanize.naturaltime(datetime.now() - d)
+            duration = datetime.now() - d
+            data = {}
+            data["d"], remaining = divmod(duration.total_seconds(), 86_400)
+            data["h"], remaining = divmod(remaining, 3_600)
+            data["m"], _ = divmod(remaining, 60)
+
+            time_parts = [f"{round(value)}{name}" for name, value in data.items() if value > 0]
+            if time_parts:
+                return " ".join(time_parts) + " ago"
+            else:
+                return "less than 1s ago"
 
         return extract
 
