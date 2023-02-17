@@ -8,10 +8,10 @@ ignore = "E203"
 
 [tool.poetry]
 name = "pdh"
-version = "0.3.6"
+version = "0.3.7"
 description = "Pagerduty CLI for Humans"
 authors = ["Manuel Bovo <manuel.bovo@gmail.com>"]
-license = "Apache-2.0"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/mbovo/pdh"
 readme = "README.md"
 
