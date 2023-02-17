@@ -170,3 +170,9 @@ task setup
 ```
 
 This will create a python virtualenv and install `pre-commit` and `poetry` in your system if you lack them.
+
+
+## License
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+See [](LICENSE) for more details.
