@@ -63,6 +63,8 @@ class Transformation(object):
                     item = change_dict[i[item_name]]
             if check:
                 if i[check_field] == check_value:
+                    if item[0] != "[":
+                        item = f"{item}".replace("[", "\\[")  # escape [ and ] to avoid rich formatting
                     return f"[{colors[0]}]{item}[/{colors[0]}]"
                 return f"[{colors[1]}]{item}[/{colors[1]}]"
             else:
