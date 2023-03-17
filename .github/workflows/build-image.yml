@@ -91,7 +91,7 @@ jobs:
             type=raw,value=${{needs.tagging.outputs.next_tag}}
 
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           file: containers/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
