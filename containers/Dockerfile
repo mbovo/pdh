@@ -1,4 +1,4 @@
-FROM python:3.10-slim as builder
+FROM python:3.11-slim as builder
 WORKDIR /app
 COPY . /app/
 RUN apt-get update && apt-get install -y curl=* \
@@ -6,15 +6,14 @@ RUN apt-get update && apt-get install -y curl=* \
   && pip install --no-cache-dir poetry==1.1.9 \
   && ./bin/task build
 
-FROM python:3.10-slim
+FROM python:3.11-slim
 LABEL org.opencontainers.image.source="https://github.com/mbovo/pdh"
 LABEL org.opencontainers.image.authors="Manuel Bovo"
 LABEL org.opencontainers.image.maintainers="Manuel Bovo"
 LABEL org.opencontainers.image.licenses="GPL-3.0-or-later"
 LABEL org.opencontainers.image.title="pdh"
 
-RUN groupadd --gid 1000 pdh \
-    && useradd --uid 1000 --gid 1000 -m pdh \
+RUN groupadd --gid 1000 pdh && useradd --uid 1000 --gid 1000 -m pdh
 WORKDIR /app
 COPY --from=builder /app/dist/*.whl /app
 COPY containers/entrypoint.sh /entrypoint.sh
