@@ -1,0 +1,23 @@
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: main
+    assignees: ["mbovo"]
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: main
+    assignees: ["mbovo"]
+
+  - package-ecosystem: "docker"
+    directory: "/containers"
+    schedule:
+      interval: "daily"
+    target-branch: "main"
+    assignees: ["mbovo"]
