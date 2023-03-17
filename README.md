@@ -166,7 +166,7 @@ docker run -ti -v ~/.config/pdh.yaml:/home/pdh/.config/pdh.yaml --rm pdh:latest 
 ## Requirements
 
 - [Taskfile](https://taskfile.dev)
-- Python >=3.9
+- Python >=3.10
 - Docker
 
 ## Contributing
