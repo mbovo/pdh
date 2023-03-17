@@ -56,7 +56,7 @@ jobs:
       - pre-commit
       - tagging
     env:
-      IMAGE_NAME: "mbovo/pdh"
+      IMAGE_NAME: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v3
 
@@ -73,7 +73,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - run: echo ${{env.IMAGE_NAME}}:${{needs.tagging.outputs.next_tag}}
@@ -82,7 +82,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ${{env.IMAGE_NAME}}
+          images: ghcr.io/${{env.IMAGE_NAME}}
           flavor: |
             latest=auto
             prefix=
