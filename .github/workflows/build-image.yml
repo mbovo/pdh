@@ -49,6 +49,9 @@ jobs:
   docker-build:
     name: "Build docker image"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs:
       - pre-commit
       - tagging
