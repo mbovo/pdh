@@ -7,6 +7,30 @@ It also add some nice tricks to automate the incident triage and easy the on-cal
 
 See [docs](./docs) (TBD)
 
+## Install
+
+### With docker
+
+```bash
+docker run -ti -v ~/.config/pdh.yaml:/root/.config/pdh.yaml --rm pdh:0.3.10 inc ls
+```
+
+### With pip
+
+```bash
+pip install pdh>=0.3.10
+```
+
+### From source
+
+```bash
+git clone https://github.com/mbovo/pdh
+cd pdh
+task setup
+source .venv/bin/activate
+pdh inc ls
+```
+
 ## Usage
 
 First of all you need to configure `pdh` to talk with PagerDuty's APIs:
@@ -153,14 +177,6 @@ if __name__ == "__main__":
     main()
 
 
-```
-
-## Using docker
-
-You can use `pdh` inside a docker container, just run:
-
-```bash
-docker run -ti -v ~/.config/pdh.yaml:/home/pdh/.config/pdh.yaml --rm pdh:latest inc ls
 ```
 
 ## Requirements
