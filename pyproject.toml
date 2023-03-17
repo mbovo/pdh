@@ -5,6 +5,20 @@ line-length = 180
 max-line-length = 172
 ignore = "E203"
 
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "C",  # flake8-comprehensions
+]
+line-length = 172
+# Allow unused variables when underscore-prefixed.
+ignore = [
+    "E501",
+    "C408", # Unnecessary dict call - rewrite as a literal.
+    "C901", # Function is too complex
+    "C416", # Unnecessary list comprehension
+]
 
 [tool.poetry]
 name = "pdh"
@@ -35,6 +49,7 @@ pytest-flake8 = "^1.0.7"
 pytest-pylint = "^0.18.0"
 pytest-mock = "^3.6.1"
 autopep8 = "^1.5.7"
+ruff = "^0.0.256"
 
 [tool.poetry.scripts]
 pdh = "pdh.main:main"

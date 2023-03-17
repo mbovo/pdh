@@ -10,10 +10,10 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: detect-private-key
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-      - id: black
+  # - repo: https://github.com/psf/black
+  #   rev: 22.3.0
+  #   hooks:
+  #     - id: black
   -   repo: https://github.com/charliermarsh/ruff-pre-commit
       rev: v0.0.254
       hooks:
@@ -30,20 +30,20 @@ repos:
           - --ignore
           - DL3015
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        args:
-          - --count
-          - --select=E9,F63,F7,F82
-          - --show-source
-          - --statistics
-          - --ignore=E203
-      - id: flake8
-        args:
-          - --count
-          - --max-complexity=10
-          - --max-line-length=150
-          - --statistics
-          - --ignore=E203,C901,E731,E501
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: 6.0.0
+  #   hooks:
+  #     - id: flake8
+  #       args:
+  #         - --count
+  #         - --select=E9,F63,F7,F82
+  #         - --show-source
+  #         - --statistics
+  #         - --ignore=E203
+  #     - id: flake8
+  #       args:
+  #         - --count
+  #         - --max-complexity=10
+  #         - --max-line-length=150
+  #         - --statistics
+  #         - --ignore=E203,C901,E731,E501
