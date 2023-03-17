@@ -155,10 +155,18 @@ if __name__ == "__main__":
 
 ```
 
+## Using docker
+
+You can use `pdh` inside a docker container, just run:
+
+```bash
+docker run -ti -v ~/.config/pdh.yaml:/home/pdh/.config/pdh.yaml --rm pdh:latest inc ls
+```
+
 ## Requirements
 
 - [Taskfile](https://taskfile.dev)
-- Python >=3.9
+- Python >=3.10
 - Docker
 
 ## Contributing

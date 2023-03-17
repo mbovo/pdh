@@ -22,7 +22,7 @@ ignore = [
 
 [tool.poetry]
 name = "pdh"
-version = "0.3.10"
+version = "0.3.11"
 description = "Pagerduty CLI for Humans"
 authors = ["Manuel Bovo <manuel.bovo@gmail.com>"]
 license = "GPL-3.0-or-later"
@@ -30,12 +30,12 @@ repository = "https://github.com/mbovo/pdh"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 click = "^8.0.1"
 colorama = "^0.4.4"
 pdpyras = "^4.3.0"
-rich = "^10.10.0"
-PyYAML = "^5.4.1"
+rich = "^13.3.2"
+PyYAML = "^6.0"
 humanize = "^4.0.0"
 jsonpath-ng = "^1.5.3"
 
@@ -43,10 +43,10 @@ jsonpath-ng = "^1.5.3"
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
 pytest = "^7.2.0"
-pytest-cov = "^2.12.1"
-pytest-xdist = "^2.3.0"
+pytest-cov = "^4.0.0"
+pytest-xdist = "^3.2.1"
 pytest-flake8 = "^1.0.7"
-pytest-pylint = "^0.18.0"
+pytest-pylint = "^0.19.0"
 pytest-mock = "^3.6.1"
 autopep8 = "^1.5.7"
 ruff = "^0.0.256"
