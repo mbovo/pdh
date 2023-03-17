@@ -7,7 +7,12 @@ RUN apt-get update && apt-get install -y curl=* \
   && ./bin/task build
 
 FROM python:3.9-slim
-LABEL maintainer="manuel.bovo@gmail.com"
+LABEL org.opencontainers.image.source="https://github.com/mbovo/pdh"
+LABEL org.opencontainers.image.authors="Manuel Bovo"
+LABEL org.opencontainers.image.maintainers="Manuel Bovo"
+LABEL org.opencontainers.image.licenses="GPL-3.0-or-later"
+LABEL org.opencontainers.image.title="pdh"
+
 WORKDIR /app
 COPY --from=builder /app/dist/*.whl /app
 COPY containers/entrypoint.sh /entrypoint.sh
