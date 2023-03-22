@@ -103,3 +103,11 @@ class Transformation(object):
 
     def extract_users_teams():
         return lambda x: ",".join([t["summary"] for t in x["teams"]])
+
+    def extract_service()->str:
+        def extract(i: dict) -> str:
+            if i["service"] is not None:
+                if i["service"]['summary'] is not None:
+                    return i["service"]['summary']
+            return ""
+        return extract
