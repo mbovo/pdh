@@ -110,7 +110,29 @@ class Filter(object):
 
         return f
 
-    def do(objects: list, transformations: dict = None, filters: list = []) -> list:
+    def not_regexp(field: str, regexp):
+        """
+        This is a filters operating on regular expression
+
+            Parameters:
+                field (str): Any dictionary field on which operate
+                regexp (str or regexp): The regular expression you would validate
+
+            Returns:
+                False if when regexp is found, True otherwise
+
+        """
+        if type(regexp) is str:
+            regexp = re.compile(regexp)
+
+        def f(item: dict) -> bool:
+            if regexp.search(item[field]):
+                return False
+            return True
+
+        return f
+
+    def do(objects: list, transformations: dict = None, filters: list = [], preserve : bool = False) -> list:
         """Given a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
                         function to used to extract values from the original list (see Transformation class)
@@ -120,7 +142,10 @@ class Filter(object):
         ret = list()
         for obj in objects:
             if transformations is not None:
-                item = {}
+                if preserve:
+                    item = obj
+                else:
+                    item = {}
                 for path, func in transformations.items():
                     item[path] = func(obj)
                 ret.append(item)
