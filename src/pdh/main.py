@@ -239,7 +239,9 @@ def apply(ctx, incident, path, output, script):
 @click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
 @click.option("--alerts", "alerts", required=False, help="Show alerts associated to each incidents", is_flag=True, default=False)
 @click.option("--alert-fields", "alert_fields", required=False, help="Show these alert fields only, comma separated", default=None)
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields):
+@click.option("-S","--service-re", "service_re", required=False, help="Show only incidents for this service (regexp)", default=None)
+@click.option("--excluded-service-re", "excluded_service_re", required=False, help="Exclude incident of these services (regexp)", default=None)
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -285,6 +287,17 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         incs = pd.list(userid, statuses=status, urgencies=urgencies)
         # BUGFIX: filter by regexp must be applyed to the original list, not only to the transformed one
         incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
+
+        if service_re:
+            incs = Filter.do(incs, transformations={"service": Transformation.extract_service()}, filters=[Filter.regexp("service", service_re)], preserve=True)
+
+        if excluded_service_re:
+            incs = Filter.do(incs, transformations={"service": Transformation.extract_service()}, filters=[Filter.not_regexp("service", excluded_service_re)], preserve=True)
+
+        if type(fields) is str:
+            fields = fields.lower().strip().split(",")
+        else:
+            fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
 
         if alerts:
             for i in incs:
