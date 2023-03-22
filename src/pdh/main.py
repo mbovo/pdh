@@ -289,10 +289,10 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
 
         if service_re:
-            incs = Filter.do(incs, transformations={"service": Transformation.extract_service()}, filters=[Filter.regexp("service", service_re)], preserve=True)
+            incs = Filter.do(incs, transformations={"service": Transformation.extract_from_dict("service","summary")}, filters=[Filter.regexp("service", service_re)], preserve=True)
 
         if excluded_service_re:
-            incs = Filter.do(incs, transformations={"service": Transformation.extract_service()}, filters=[Filter.not_regexp("service", excluded_service_re)], preserve=True)
+            incs = Filter.do(incs, transformations={"service": Transformation.extract_from_dict("service","summary")}, filters=[Filter.not_regexp("service", excluded_service_re)], preserve=True)
 
         if type(fields) is str:
             fields = fields.lower().strip().split(",")
