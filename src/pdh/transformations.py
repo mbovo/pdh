@@ -34,7 +34,7 @@ class Transformation(object):
     def extract_date(item_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ"):
         def extract(i: dict) -> str:
             d = datetime.strptime(i[item_name], format)
-            duration = datetime.now() - d
+            duration = datetime.utcnow() - d
             data = {}
             data["d"], remaining = divmod(duration.total_seconds(), 86_400)
             data["h"], remaining = divmod(remaining, 3_600)
