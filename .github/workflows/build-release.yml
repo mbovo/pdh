@@ -19,9 +19,6 @@ jobs:
     needs:
       - pre-commit
     runs-on: ubuntu-latest
-    env:
-      PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
