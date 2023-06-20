@@ -271,7 +271,8 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         fields = fields.lower().strip().split(",")
     else:
         fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
-    if alerts: fields.append("alerts")
+    if alerts:
+        fields.append("alerts")
 
     if type(alert_fields) is str:
         alert_fields = alert_fields.lower().strip().split(",")
