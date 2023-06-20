@@ -266,26 +266,28 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     console = Console()
     # fallback to configured userid
 
+    # set fields that will be displayed
+    if type(fields) is str:
+        fields = fields.lower().strip().split(",")
+    else:
+        fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
+    if alerts: fields.append("alerts")
+
+    if type(alert_fields) is str:
+        alert_fields = alert_fields.lower().strip().split(",")
+    else:
+        alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
+
     if not everything and not userid:
         userid = pd.cfg["uid"]
     while True:
         incs = pd.list(userid, statuses=status, urgencies=urgencies)
         # BUGFIX: filter by regexp must be applyed to the original list, not only to the transformed one
         incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
-        if type(fields) is str:
-            fields = fields.lower().strip().split(",")
-        else:
-            fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
 
-        if type(alert_fields) is str:
-            alert_fields = alert_fields.lower().strip().split(",")
-
-        else:
-            alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
         if alerts:
             for i in incs:
                 i["alerts"] = pd.alerts(i["id"])
-            fields.append("alerts")
 
         # Build filtered list for output
         if output != "raw":

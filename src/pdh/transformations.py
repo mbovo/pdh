@@ -44,7 +44,7 @@ class Transformation(object):
             if time_parts:
                 return " ".join(time_parts) + " ago"
             else:
-                return "less than 1s ago"
+                return "less than 1m ago"
 
         return extract
 
