@@ -58,6 +58,16 @@ tasks:
       - poetry.lock
     method: checksum
 
+  dependency-install-ci:
+    cmds:
+      - poetry install
+    sources:
+      - poetry.lock
+      - pyproject.toml
+    generates:
+      - poetry.lock
+    method: checksum
+
   setup:
     desc: Bootstrap dev environment
     preconditions:
@@ -69,6 +79,17 @@ tasks:
       - task: virtualenv
       - task: pre-commit
       - task: dependency-install
+
+  setup-ci:
+    preconditions:
+      - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 >= 8) }') = 1 ]"
+        msg: "Required python version not found (>=3.8)"
+    cmds:
+      - task: pre-commit-setup
+      - task: poetry-setup
+      - task: virtualenv
+      - task: pre-commit
+      - task: dependency-install-ci
 
   test:
     desc: Run python test and coverage

@@ -21,7 +21,8 @@ jobs:
           python-version: '3.11'
       - uses: arduino/setup-task@v1
       - name: Prepare dev env
-        run: task setup
+        shell: bash
+        run: task setup-ci
       - name: Lint and tests
         run: |
           source .venv/bin/activate
