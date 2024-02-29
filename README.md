@@ -9,6 +9,12 @@ See [docs](./docs) (TBD)
 
 ## Install
 
+### Arch linux
+
+```bash
+yay -S pdh
+```
+
 ### With docker
 
 ```bash
@@ -21,6 +27,16 @@ docker run -ti -v ~/.config/pdh.yaml:/root/.config/pdh.yaml --rm pdh:0.3.10 inc 
 pip install pdh>=0.3.10
 ```
 
+### From source with nix and direnv
+
+```bash
+
+git clone https://github.com/mbovo/pdh
+direnv allow pdh
+cd pdh
+pdh inc ls -e
+```
+
 ### From source
 
 ```bash
@@ -28,7 +44,7 @@ git clone https://github.com/mbovo/pdh
 cd pdh
 task setup
 source .venv/bin/activate
-pdh inc ls
+pdh inc ls -e
 ```
 
 ## Usage
