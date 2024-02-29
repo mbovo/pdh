@@ -23,16 +23,11 @@
             buildInputs = [
               pkgs.pre-commit
               pkgs.go-task
-              pkgs.tilt
               pkgs.python311
               pkgs.poetry
-              pkgs.kind
-              pkgs.kubernetes-helm
-              pkgs.kubectl
-              pkgs.kubeconform
+              pkgs.docker
             ];
             shellHook = ''
-                printf "Done  \n"
                 task setup
                 source .venv/bin/activate
                 '';
