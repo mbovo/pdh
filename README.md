@@ -37,6 +37,17 @@ cd pdh
 pdh inc ls -e
 ```
 
+### From source with devbox
+
+```bash
+
+git clone https://github.com/mbovo/pdh
+direnv allow pdh
+cd pdh
+pdh inc ls -e
+
+```
+
 ### From source
 
 ```bash

@@ -1,11 +1,12 @@
 .direnv/*
-dist/*
-*.pytest_cache
+.devbox/*
+.task/*
 .venv
 .vscode
+dist/*
+*.pytest_cache
 *.egg-info
 .coverage
 *__pycache__
 runme.sh
-.task/*
 pdh.yaml

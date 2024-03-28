@@ -1,0 +1,107 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "docker@latest": {
+      "last_modified": "2024-03-23T22:08:43Z",
+      "resolved": "github:NixOS/nixpkgs/e1d501922fd7351da4200e1275dfcf5faaad1220#docker",
+      "source": "devbox-search",
+      "version": "24.0.5",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/3412rpx80pcsrbmbx6bip1992xawhfg2-docker-24.0.5"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/1202j2zfm8r7qmcwdbndfp1cx6ydmr6g-docker-24.0.5"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/k21iy7saack71g5n5psm8xqkzy83wa30-docker-24.0.5"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/wrs25iqiy3j8x443hfrgv8mqariqj655-docker-24.0.5"
+        }
+      }
+    },
+    "go-task@latest": {
+      "last_modified": "2024-03-22T11:26:23Z",
+      "resolved": "github:NixOS/nixpkgs/a3ed7406349a9335cb4c2a71369b697cecd9d351#go-task",
+      "source": "devbox-search",
+      "version": "3.35.1",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/8xlnzmvkpj03yw5xmsm6acz8w0rd3cr7-go-task-3.35.1"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/n0gjrdfrjj5pxirp3v6w9qdw3r8d076r-go-task-3.35.1"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/9a8myn2zjl17ws0h7pgw210mwvgd6dm8-go-task-3.35.1"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/1xb7vmm16bhlq12lk1q3fhkcypv2p9kb-go-task-3.35.1"
+        }
+      }
+    },
+    "poetry@latest": {
+      "last_modified": "2024-03-23T13:32:18Z",
+      "plugin_version": "0.0.4",
+      "resolved": "github:NixOS/nixpkgs/20bc93ca7b2158ebc99b8cef987a2173a81cde35#poetry",
+      "source": "devbox-search",
+      "version": "1.8.2",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/wzmsknwy7zil3767svmn33fkd6mnsv5y-python3.11-poetry-1.8.2"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/ai8j0safizmaqr9jk88901wfk2bzzwgh-python3.11-poetry-1.8.2"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/92a9ri8yckqq7ik599hazbr0kidrj9cz-python3.11-poetry-1.8.2"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/1f6zl0dc2q2m2ar6179s1blmzpwjlvnc-python3.11-poetry-1.8.2"
+        }
+      }
+    },
+    "pre-commit@latest": {
+      "last_modified": "2024-03-22T11:26:23Z",
+      "resolved": "github:NixOS/nixpkgs/a3ed7406349a9335cb4c2a71369b697cecd9d351#pre-commit",
+      "source": "devbox-search",
+      "version": "3.6.2",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/6wl4vr3gjkjqmmfdraliiy12ji0i9kr1-pre-commit-3.6.2"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/nx7rp9yi4nyyqlr12cgi3awrxx30bbbl-pre-commit-3.6.2"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/fv6fq7brr23d74igw1zs375gv5bznlyf-pre-commit-3.6.2"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/4b3pm5rzbrr4ia0hhqag47d1r6qc2qyl-pre-commit-3.6.2"
+        }
+      }
+    },
+    "python@3.11": {
+      "last_modified": "2024-03-22T11:26:23Z",
+      "plugin_version": "0.0.3",
+      "resolved": "github:NixOS/nixpkgs/a3ed7406349a9335cb4c2a71369b697cecd9d351#python3",
+      "source": "devbox-search",
+      "version": "3.11.8",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/c05vbvkjxarxkws9zkwrcwrzlsx9nd68-python3-3.11.8"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/pxzzyri1wbq7kc7pain665g94afkl4ww-python3-3.11.8"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/1zaap1xxxvw2ypsgh1mfxb3wzdd49873-python3-3.11.8"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/7wz6hm9i8wljz0hgwz1wqmn2zlbgavrq-python3-3.11.8"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "packages": [
+    "pre-commit@latest",
+    "go-task@latest",
+    "python@3.11",
+    "poetry@latest",
+    "docker@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "task setup",
+      "poetry install"
+    ],
+    "scripts": {
+      "test": [
+        "task test"
+      ]
+    }
+  }
+}
