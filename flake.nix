@@ -36,6 +36,7 @@
                         editablePackageSources = {
                             my-app = ./src;
                         };
+                        preferWheels = true;
                         overrides = override;
                       };
         in
@@ -43,8 +44,16 @@
           packages.default = p2nix.mkPoetryApplication {
             projectDir = ./.;
             overrides = override;
+            preferWheels = true;
           };
-          devShell = myappEnv.env;
+          devShell = (p2nix.mkPoetryEnv {
+            projectDir = ./.;
+            editablePackageSources = {
+                my-app = ./src;
+            };
+            preferWheels = true;
+            overrides = override;
+          }).env;
         }
       );
 }
