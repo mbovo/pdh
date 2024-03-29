@@ -31,14 +31,6 @@
                                 }
                               );
                             });
-          myappEnv = p2nix.mkPoetryEnv {
-                        projectDir = ./.;
-                        editablePackageSources = {
-                            my-app = ./src;
-                        };
-                        preferWheels = true;
-                        overrides = override;
-                      };
         in
         {
           packages.default = p2nix.mkPoetryApplication {
@@ -46,14 +38,20 @@
             overrides = override;
             preferWheels = true;
           };
-          devShell = (p2nix.mkPoetryEnv {
-            projectDir = ./.;
-            editablePackageSources = {
-                my-app = ./src;
-            };
-            preferWheels = true;
-            overrides = override;
-          }).env;
+          devShell = pkgs.mkShell {
+            buildInputs = [
+              pkgs.pre-commit
+              pkgs.go-task
+              pkgs.python311
+              pkgs.poetry
+              pkgs.docker
+            ];
+            shellHook = ''
+                task setup
+                source .venv/bin/activate
+                poetry install
+                '';
+          };
         }
       );
 }
