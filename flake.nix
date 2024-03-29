@@ -21,8 +21,8 @@
       (system:
         let
           pkgs = import nixpkgs { inherit system; };
-          p2nix = import poetry2nix { inherit pkgs; };
-          override = p2nix.defaultPoetryOverrides.extend
+          inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides;
+          override = defaultPoetryOverrides.extend
                             (self: super: {
                               pdpyras = super.pdpyras.overridePythonAttrs
                               (
@@ -33,18 +33,23 @@
                             });
         in
         {
-          packages.default = p2nix.mkPoetryApplication {
-            projectDir = ./.;
-            overrides = override;
-            preferWheels = true;
+          packages = {
+             pdh = mkPoetryApplication {
+                projectDir = ./.;
+                overrides = override;
+                preferWheels = true;
+            };
+            default = self.packages.${system}.pdh;
           };
+
           devShell = pkgs.mkShell {
-            buildInputs = [
-              pkgs.pre-commit
-              pkgs.go-task
-              pkgs.python311
-              pkgs.poetry
-              pkgs.docker
+            inputsFrom = [ self.packages.${system}.pdh];
+            packages = with pkgs; [
+              pre-commit
+              go-task
+              python311
+              poetry
+              docker
             ];
             shellHook = ''
                 task setup
