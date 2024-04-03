@@ -3,6 +3,7 @@
 .task/*
 .venv
 .vscode
+result*
 dist/*
 *.pytest_cache
 *.egg-info

@@ -37,7 +37,7 @@
              pdh = mkPoetryApplication {
                 projectDir = ./.;
                 overrides = override;
-                preferWheels = true;
+                # preferWheels = true;
             };
             default = self.packages.${system}.pdh;
           };

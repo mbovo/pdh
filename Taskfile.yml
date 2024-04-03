@@ -117,3 +117,10 @@ tasks:
     desc: Reset dev environment
     cmds:
       - rm -rf .venv .task
+
+  nix:build:
+    desc: Build nix derivation
+    cmds:
+      - nix build
+      - nix path-info --recursive | cachix push pdh
+      - nix flake archive --json | jq --raw-output '.path, (.inputs | to_entries [] .value.path)' | cachix push pdh
