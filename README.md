@@ -9,6 +9,18 @@ See [docs](./docs) (TBD)
 
 ## Install
 
+### Nix
+
+If you are using [cachix](https://cachix.org) you can use the prebuilt packages:
+
+```bash
+cachix use pdh
+```
+
+```bash
+nix shell github:mbovo/pdh
+```
+
 ### Arch linux
 
 ```bash
@@ -40,7 +52,6 @@ pdh inc ls -e
 ### From source with devbox
 
 ```bash
-
 git clone https://github.com/mbovo/pdh
 direnv allow pdh
 cd pdh
