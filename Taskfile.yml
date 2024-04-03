@@ -121,6 +121,5 @@ tasks:
   nix:build:
     desc: Build nix derivation
     cmds:
-      - nix build
-      - nix path-info --recursive | cachix push pdh
+      - nix build --json | jq -r '.[].outputs | to_entries[].value' | cachix push pdh
       - nix flake archive --json | jq --raw-output '.path, (.inputs | to_entries [] .value.path)' | cachix push pdh
