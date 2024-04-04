@@ -6,7 +6,8 @@
     "poetry@latest",
     "docker@latest",
     "pre-commit@latest",
-    "cachix@latest"
+    "cachix@latest",
+    "statix@latest"
   ],
   "shell": {
     "init_hook": [
