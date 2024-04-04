@@ -21,7 +21,7 @@
       (system:
         let
           pkgs = import nixpkgs { inherit system; };
-          inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides;
+          inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides mkPoetryPackages;
           override = defaultPoetryOverrides.extend
                             (self: super: {
                               pdpyras = super.pdpyras.overridePythonAttrs
@@ -31,13 +31,19 @@
                                 }
                               );
                             });
+          poetryPkgs = mkPoetryPackages {
+            projectDir = ./.;
+            overrides = override;
+            preferWheels = true;
+          };
         in
         {
           packages = {
-             pdh = mkPoetryApplication {
+            pdh = mkPoetryApplication {
                 projectDir = ./.;
                 overrides = override;
-                # preferWheels = true;
+                preferWheels = true;
+                propagatedBuildInputs = [ poetryPkgs.poetryPackages ];
             };
             default = self.packages.${system}.pdh;
           };
