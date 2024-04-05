@@ -39,28 +39,43 @@
         in
         {
           packages = {
-            pdh = mkPoetryApplication {
+            cli = mkPoetryApplication {
                 projectDir = ./.;
                 overrides = override;
                 preferWheels = true;
                 propagatedBuildInputs = [ poetryPkgs.poetryPackages ];
             };
-            default = self.packages.${system}.pdh;
+            module = pkgs.python3Packages.buildPythonPackage {
+                name = "pdh";
+                src = self;
+                projectDir = ./.;
+                format = "pyproject";
+                nativeBuildInputs = [
+                  pkgs.python3Packages.poetry-core
+                ];
+                propagatedBuildInputs = [
+                    poetryPkgs.poetryPackages
+                ];
+                nativeCheckInputs = [
+                  pkgs.python3Packages.pytestCheckHook
+                ];
+                pythonImportsCheck = [
+                  "pdh"
+                ];
+            };
+            default = self.packages.${system}.cli;
           };
 
           devShell = pkgs.mkShell {
-            inputsFrom = [ self.packages.${system}.pdh];
+            inputsFrom = [ self.packages.${system}.cli];
             packages = with pkgs; [
               pre-commit
               go-task
-              python311
+              (python3.withPackages (ps: with ps; [ self.packages.${system}.module ]))
               poetry
               docker
             ];
             shellHook = ''
-                task setup
-                source .venv/bin/activate
-                poetry install
                 '';
           };
         }
