@@ -30,7 +30,7 @@ repository = "https://github.com/mbovo/pdh"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.6"
 click = "^8.1.7"
 colorama = "^0.4.4"
 pdpyras = "^5.2.0"
