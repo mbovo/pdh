@@ -22,7 +22,7 @@
         let
           pkgs = import nixpkgs { inherit system; };
           inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides mkPoetryPackages;
-          override = defaultPoetryOverrides.extend
+          overrides = defaultPoetryOverrides.extend
                             (self: super: {
                               pdpyras = super.pdpyras.overridePythonAttrs
                               (
@@ -31,18 +31,17 @@
                                 }
                               );
                             });
+          projectDir = ./.;
+          preferWheels = true;
+          # build the list of depnendencies from poetry lock file
           poetryPkgs = mkPoetryPackages {
-            projectDir = ./.;
-            overrides = override;
-            preferWheels = true;
+            inherit projectDir preferWheels overrides;
           };
         in
         {
           packages = {
             cli = mkPoetryApplication {
-                projectDir = ./.;
-                overrides = override;
-                preferWheels = true;
+                inherit projectDir preferWheels overrides;
                 propagatedBuildInputs = [ poetryPkgs.poetryPackages ];
             };
             module = pkgs.python3Packages.buildPythonPackage {
@@ -74,6 +73,8 @@
               (python3.withPackages (ps: with ps; [ self.packages.${system}.module ]))
               poetry
               docker
+              cachix
+              statix
             ];
             shellHook = ''
                 '';
