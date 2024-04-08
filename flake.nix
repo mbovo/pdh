@@ -40,11 +40,11 @@
         in
         {
           packages = {
-            cli = mkPoetryApplication {
+            pdhcli = mkPoetryApplication {
                 inherit projectDir preferWheels overrides;
                 propagatedBuildInputs = [ poetryPkgs.poetryPackages ];
             };
-            module = pkgs.python3Packages.buildPythonPackage {
+            pdh = pkgs.python3Packages.buildPythonPackage {
                 name = "pdh";
                 src = self;
                 projectDir = ./.;
@@ -62,15 +62,15 @@
                   "pdh"
                 ];
             };
-            default = self.packages.${system}.cli;
+            default = self.packages.${system}.pdhcli;
           };
 
           devShell = pkgs.mkShell {
-            inputsFrom = [ self.packages.${system}.cli];
+            inputsFrom = [ self.packages.${system}.pdhcli];
             packages = with pkgs; [
               pre-commit
               go-task
-              (python3.withPackages (ps: with ps; [ self.packages.${system}.module ]))
+              (python3.withPackages (ps: with ps; [ self.packages.${system}.pdh ]))
               poetry
               docker
               cachix
