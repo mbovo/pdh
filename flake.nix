@@ -22,7 +22,7 @@
         let
           pkgs = import nixpkgs { inherit system; };
           inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides mkPoetryPackages;
-          override = defaultPoetryOverrides.extend
+          overrides = defaultPoetryOverrides.extend
                             (self: super: {
                               pdpyras = super.pdpyras.overridePythonAttrs
                               (
@@ -31,36 +31,52 @@
                                 }
                               );
                             });
+          projectDir = ./.;
+          preferWheels = true;
+          # build the list of depnendencies from poetry lock file
           poetryPkgs = mkPoetryPackages {
-            projectDir = ./.;
-            overrides = override;
-            preferWheels = true;
+            inherit projectDir preferWheels overrides;
           };
         in
         {
           packages = {
-            pdh = mkPoetryApplication {
-                projectDir = ./.;
-                overrides = override;
-                preferWheels = true;
+            cli = mkPoetryApplication {
+                inherit projectDir preferWheels overrides;
                 propagatedBuildInputs = [ poetryPkgs.poetryPackages ];
             };
-            default = self.packages.${system}.pdh;
+            module = pkgs.python3Packages.buildPythonPackage {
+                name = "pdh";
+                src = self;
+                projectDir = ./.;
+                format = "pyproject";
+                nativeBuildInputs = [
+                  pkgs.python3Packages.poetry-core
+                ];
+                propagatedBuildInputs = [
+                    poetryPkgs.poetryPackages
+                ];
+                nativeCheckInputs = [
+                  pkgs.python3Packages.pytestCheckHook
+                ];
+                pythonImportsCheck = [
+                  "pdh"
+                ];
+            };
+            default = self.packages.${system}.cli;
           };
 
           devShell = pkgs.mkShell {
-            inputsFrom = [ self.packages.${system}.pdh];
+            inputsFrom = [ self.packages.${system}.cli];
             packages = with pkgs; [
               pre-commit
               go-task
-              python311
+              (python3.withPackages (ps: with ps; [ self.packages.${system}.module ]))
               poetry
               docker
+              cachix
+              statix
             ];
             shellHook = ''
-                task setup
-                source .venv/bin/activate
-                poetry install
                 '';
           };
         }

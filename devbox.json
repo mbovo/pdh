@@ -8,17 +8,5 @@
     "pre-commit@latest",
     "cachix@latest",
     "statix@latest"
-  ],
-  "shell": {
-    "init_hook": [
-      "task setup",
-      "source .venv/bin/activate",
-      "poetry install"
-    ],
-    "scripts": {
-      "test": [
-        "echo \"Error: no test specified\" && exit 1"
-      ]
-    }
-  }
+  ]
 }

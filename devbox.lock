@@ -2,8 +2,8 @@
   "lockfile_version": "1",
   "packages": {
     "cachix@latest": {
-      "last_modified": "2024-03-29T12:35:36Z",
-      "resolved": "github:NixOS/nixpkgs/807c549feabce7eddbf259dbdcec9e0600a0660d#cachix",
+      "last_modified": "2024-03-28T11:17:37Z",
+      "resolved": "github:NixOS/nixpkgs/72c6ed328aa4e5d9151b1a512f6ad83aca7529fa#cachix",
       "source": "devbox-search",
       "version": "1.7",
       "systems": {
@@ -15,12 +15,12 @@
               "default": true
             },
             {
-              "name": "out",
-              "path": "/nix/store/nr2q4vqzm481qfj8l4h93jgcj4my9pk6-cachix-1.7"
-            },
-            {
               "name": "doc",
               "path": "/nix/store/2lhcxiq9r33dsiq7qbdk0xb7nj9dqhn5-cachix-1.7-doc"
+            },
+            {
+              "name": "out",
+              "path": "/nix/store/nr2q4vqzm481qfj8l4h93jgcj4my9pk6-cachix-1.7"
             }
           ],
           "store_path": "/nix/store/99m90gsy7g7mxkla0s379wv748y57dx0-cachix-1.7-bin"
@@ -101,11 +101,11 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/3b60y3ivsmh891avwdiscw8f299drkky-docker-24.0.5",
+              "path": "/nix/store/mlld9mk19i95qy86aqsxx66lcjn80425-docker-24.0.5",
               "default": true
             }
           ],
-          "store_path": "/nix/store/3b60y3ivsmh891avwdiscw8f299drkky-docker-24.0.5"
+          "store_path": "/nix/store/mlld9mk19i95qy86aqsxx66lcjn80425-docker-24.0.5"
         },
         "x86_64-darwin": {
           "outputs": [
@@ -121,11 +121,11 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/cyg1idicm96z22lbj1n9fvqvhx647n7n-docker-24.0.5",
+              "path": "/nix/store/2fg8vp4ll37g493li008sxixaqs54wwf-docker-24.0.5",
               "default": true
             }
           ],
-          "store_path": "/nix/store/cyg1idicm96z22lbj1n9fvqvhx647n7n-docker-24.0.5"
+          "store_path": "/nix/store/2fg8vp4ll37g493li008sxixaqs54wwf-docker-24.0.5"
         }
       }
     },
