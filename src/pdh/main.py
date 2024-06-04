@@ -15,7 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import click
-import pkg_resources
+import importlib.metadata
 import sys
 import re
 import os
@@ -56,7 +56,7 @@ def config(config):
 
 @main.command(help="Print cloud tools version and exit")
 def version():
-    click.echo(f"v{pkg_resources.get_distribution('pdh').version}")
+    click.echo(f"v{importlib.metadata.version('pdh')}")
 
 
 @main.group(help="Operater on Users")

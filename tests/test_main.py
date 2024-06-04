@@ -18,7 +18,7 @@ import io
 from rich.console import Console
 from pdh import main
 from click import testing
-import pkg_resources
+import importlib.metadata
 
 
 def test_assert_true():
@@ -34,7 +34,7 @@ def test_main_version():
     runner = testing.CliRunner()
     result = runner.invoke(main.main, "version")
     assert result.exit_code == 0
-    assert result.stdout == f"v{pkg_resources.get_distribution('pdh').version}\n"
+    assert result.stdout == f"v{importlib.metadata.version('pdh')}\n"
 
 
 def test_print_items_table():
