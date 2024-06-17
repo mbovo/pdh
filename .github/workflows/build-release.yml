@@ -80,7 +80,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: containers/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
