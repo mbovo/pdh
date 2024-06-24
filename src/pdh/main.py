@@ -167,7 +167,7 @@ def snooze(ctx, incidentids, duration):
 @click.option("-u", "--user", required=True, help="User name or email to assign to (fuzzy find!)")
 @click.argument("incident", nargs=-1)
 def reassign(ctx, incident, user):
-    PDH.reassing(ctx.obj, incident, user)
+    PDH.reassign(ctx.obj, incident, user)
 
 
 @inc.command(help="Apply scripts with sideeffects to given incident")
