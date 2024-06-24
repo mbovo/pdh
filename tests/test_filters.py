@@ -90,6 +90,10 @@ def test_filter_regexp():
     assert len(result) == 3
     assert result == ilist
 
+def test_filter_not_regexp():
+    result = Filter.do(ilist, transformations, [Filter.not_regexp("afield", "orange")])
+    assert len(result) == 2
+    assert result == [apple, kiwi]
 
 def test_transformation_extract_field():
     trans = {"afield": Transformation.extract_field("afield", check=False)}
