@@ -47,7 +47,7 @@ pdh = "pdh.main:main"
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.2.3"
 black = "^23.1.0"
-pytest = "^7.2.0"
+pytest = ">=7.2,<9.0"
 pytest-cov = "^4.0.0"
 pytest-mock = "^3.14.0"
 ruff = "^0.0.257"
