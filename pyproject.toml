@@ -41,19 +41,16 @@ jsonpath-ng = "^1.6.1"
 deprecation = "^2.1.0"
 setuptools = "^69.0.0"
 
-
-[tool.poetry.group.dev.dependencies]
-black = "^24.4.2"
-pytest = "^8.2.1"
-pytest-cov = "^5.0.0"
-pytest-xdist = "^3.6.1"
-pytest-flake8 = "^1.1.1"
-pytest-mock = "^3.14.0"
-autopep8 = "^2.2.0"
-ruff = "^0.4.7"
-
 [tool.poetry.scripts]
 pdh = "pdh.main:main"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.2.3"
+black = "^23.1.0"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-mock = "^3.14.0"
+ruff = "^0.0.257"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

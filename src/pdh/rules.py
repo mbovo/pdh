@@ -72,7 +72,7 @@ def exec(cmd: Union[str, list]) -> ShellResponse:
     return ShellResponse(out, err, rc)
 
 
-def chain(incs: list(), path: str, pd: Incidents = None):
+def chain(incs: list, path: str, pd: Incidents = None):
     """
     Chain loading another rule with the given list of incidents
       Parameters:

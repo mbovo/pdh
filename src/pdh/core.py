@@ -105,7 +105,7 @@ class PDH(object):
 
         pd.snooze(incs, duration)
 
-    def reassing(cfg: Config, incIDs: list = [], user: str = None):
+    def reassign(cfg: Config, incIDs: list = [], user: str = None):
         pd = Incidents(cfg)
         incs = pd.list()
         incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
