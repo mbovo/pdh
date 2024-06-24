@@ -104,7 +104,7 @@ class Transformation(object):
     def extract_users_teams():
         return lambda x: ",".join([t["summary"] for t in x["teams"]])
 
-    def extract_from_dict(field:str, subfield:str ) -> str:
+    def extract_from_dict(field:str, subfield:str , errStr:str = 'unknown_field') -> str:
         '''
             Extract the subfield the field dictionary
 
@@ -120,6 +120,8 @@ class Transformation(object):
             extract_from_dict("field", "subfield")(alert) -> "value"
         '''
         def extract(i: dict) -> str:
+            if field not in i:
+                return errStr
             if i[field] is not None and isinstance(i[field], dict):
                 if i[field][subfield] is not None:
                     if isinstance(i[field][subfield], str):
