@@ -7,24 +7,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+    # - uses: actions/setup-python@v5
+    #   with:
+    #     python-version: '3.11'
+    - name: Install devbox
+      uses: jetify-com/devbox-install-action@v0.8.0
+    - name: Using devbox
+      run: devbox shell
     - uses: pre-commit/action@v3.0.0
 
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - uses: arduino/setup-task@v1
-      - name: Prepare dev env
-        shell: bash
-        run: task setup-ci
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.11'
+      # - uses: arduino/setup-task@v1
+      # - name: Prepare dev env
+      #   shell: bash
+      #   run: task setup-ci
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.8.0
       - name: Lint and tests
         run: |
+          devbox shell
+          task setup
           source .venv/bin/activate
           task test
   build-test:
@@ -35,11 +43,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - uses: arduino/setup-task@v1
-      - run: task setup-ci
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.11'
+      # - uses: arduino/setup-task@v1
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.8.0
+
+      - run: task setup
       - run: task build
 
   docker-build-test:

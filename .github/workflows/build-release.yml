@@ -7,9 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+    - name: Install devbox
+      uses: jetify-com/devbox-install-action@v0.8.0
+
+    # - uses: actions/setup-python@v5
+    #   with:
+    #     python-version: '3.11'
     - uses: pre-commit/action@v3.0.0
   build:
     permissions:
@@ -21,10 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - uses: arduino/setup-task@v1
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.8.0
+
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.11'
+      # - uses: arduino/setup-task@v1
       - run: task setup-ci
       - run: task build
       - name: "Release to pypi"
