@@ -294,11 +294,6 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         if excluded_service_re:
             incs = Filter.do(incs, transformations={"service": Transformation.extract_from_dict("service","summary")}, filters=[Filter.not_regexp("service", excluded_service_re)], preserve=True)
 
-        if type(fields) is str:
-            fields = fields.lower().strip().split(",")
-        else:
-            fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
-
         if alerts:
             for i in incs:
                 i["alerts"] = pd.alerts(i["id"])
