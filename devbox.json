@@ -1,12 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetpack-io/devbox/0.10.1/.schema/devbox.schema.json",
   "packages": [
-    "go-task@latest",
-    "python@3.11",
-    "poetry@latest",
-    "docker@latest",
-    "pre-commit@latest",
-    "cachix@latest",
+    "go-task@3.38.0",
+    "python@3.11.9",
+    "poetry@1.8.3",
+    "docker@27.1.1",
+    "pre-commit@3.7.1",
+    "cachix@1.7.4",
     "statix@latest"
   ]
 }
