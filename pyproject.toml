@@ -22,7 +22,7 @@ ignore = [
 
 [tool.poetry]
 name = "pdh"
-version = "0.4.2"
+version = "0.4.3"
 description = "Pagerduty CLI for Humans"
 authors = ["Manuel Bovo <manuel.bovo@gmail.com>"]
 license = "GPL-3.0-or-later"
@@ -39,7 +39,7 @@ PyYAML = "^6.0.2"
 humanize = "^4.10.0"
 jsonpath-ng = "^1.6.1"
 deprecation = "^2.1.0"
-setuptools = "^74.1.0"
+setuptools = "^72.1.0"
 
 [tool.poetry.scripts]
 pdh = "pdh.main:main"

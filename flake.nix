@@ -51,9 +51,11 @@
                 format = "pyproject";
                 nativeBuildInputs = [
                   pkgs.python3Packages.poetry-core
+                  pkgs.python3Packages.setuptools
                 ];
                 propagatedBuildInputs = [
                     poetryPkgs.poetryPackages
+                    pkgs.python3Packages.setuptools
                 ];
                 nativeCheckInputs = [
                   pkgs.python3Packages.pytestCheckHook
