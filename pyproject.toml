@@ -39,7 +39,7 @@ PyYAML = "^6.0.2"
 humanize = "^4.10.0"
 jsonpath-ng = "^1.6.1"
 deprecation = "^2.1.0"
-setuptools = "^72.1.0"
+setuptools = ">=72.1,<75.0"
 
 [tool.poetry.scripts]
 pdh = "pdh.main:main"
