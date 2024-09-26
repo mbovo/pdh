@@ -99,6 +99,26 @@ Any other incident currently outstanding:
 pdh inc ls -e
 ```
 
+### Sorting incident by field
+
+```bash
+pdh inc ls --sort assignee --reverse
+```
+
+In case the field is not found the cli will notice you and print the list of available fields
+
+```bash
+ pdh inc ls -e --sort unkn --reverse
+Invalid sort field: unkn
+Available fields: id, assignee, title, status, created_at, last_status_change_at, url
+```
+
+You can always sort by multiple fields using comma as separator:
+
+```bash
+pdh inc ls --sort assignee,status
+```
+
 ### Auto ACK incoming incidents
 
 Watch for new incidents every 10s and automatically set them to `Acknowledged`

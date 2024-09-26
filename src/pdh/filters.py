@@ -1,6 +1,6 @@
 #
 # This file is part of the pdh (https://github.com/mbovo/pdh).
-# Copyright (c) 2020-2023 Manuel Bovo.
+# Copyright (c) 2020-2024 Manuel Bovo.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ class Filter(object):
 
         return f
 
-    def do(objects: list, transformations: dict = None, filters: list = [], preserve : bool = False) -> list:
+    def do(objects: list, transformations: dict|None = None, filters: list = [], preserve : bool = False) -> list:
         """Given a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
                         function to used to extract values from the original list (see Transformation class)
