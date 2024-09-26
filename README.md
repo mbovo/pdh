@@ -147,6 +147,23 @@ pdh inc resolve INCID0001 INCID0024 INCID0023
 pdh inc ls --resolve --regexp ".*Backup.*"
 ```
 
+### Extract custom fields
+
+You can also extract custom fields from the pagerduty json output:
+
+You can nested fields using dot notation (i.e `service.summary`)
+
+```bash
+pdh inc ls -e --fields service.summary,status,title,assignee,created_at,url
+```
+
+To understand the available fields you can get the raw json output and inspect it:
+
+```bash
+pdh inc ls -e -o raw
+```
+
+
 ## Rules
 
 `PDH` support custom scripting applied to your incidents list. These `rules` are in fact any type of executable you can run on your machine.
