@@ -40,6 +40,7 @@ humanize = "^4.10.0"
 jsonpath-ng = "^1.6.1"
 deprecation = "^2.1.0"
 setuptools = "^75.1.0"
+dikdik = "^0.1.6"
 
 [tool.poetry.scripts]
 pdh = "pdh.main:main"
