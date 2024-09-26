@@ -241,7 +241,9 @@ def apply(ctx, incident, path, output, script):
 @click.option("--alert-fields", "alert_fields", required=False, help="Show these alert fields only, comma separated", default=None)
 @click.option("-S","--service-re", "service_re", required=False, help="Show only incidents for this service (regexp)", default=None)
 @click.option("--excluded-service-re", "excluded_service_re", required=False, help="Exclude incident of these services (regexp)", default=None)
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re):
+@click.option("--sort", "sort_by", required=False, help="Sort by field name", default=None)
+@click.option("--reverse", "reverse_sort", required=False, help="Reverse the sort", is_flag=True, default=False)
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -328,6 +330,14 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             for f in fields:
                 s += f"{i[f]}\t"
             print(s)
+
+        if sort_by :
+            try:
+                filtered = sorted(filtered, key=lambda x: x[sort_by], reverse=reverse_sort)
+            except KeyError:
+                print(f"[red]Invalid sort field: {sort_by}[/red]")
+                print(f"[yellow]Available fields: {', '.join(fields)}[/yellow]")
+                sys.exit(-2)
 
         print_items(filtered, output, plain_print_f=plain_print_f)
 
