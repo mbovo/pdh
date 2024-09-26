@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # This file is part of the pdh (https://github.com/mbovo/pdh).
-# Copyright (c) 2020-2023 Manuel Bovo.
+# Copyright (c) 2020-2024 Manuel Bovo.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
