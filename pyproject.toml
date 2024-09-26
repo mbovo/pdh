@@ -34,23 +34,23 @@ python = "^3.11"
 click = "^8.1.7"
 colorama = "^0.4.6"
 pdpyras = "^5.2.0"
-rich = "^13.7.1"
+rich = "^13.8.1"
 PyYAML = "^6.0.2"
 humanize = "^4.10.0"
 jsonpath-ng = "^1.6.1"
 deprecation = "^2.1.0"
-setuptools = "^72.1.0"
+setuptools = "^75.1.0"
 
 [tool.poetry.scripts]
 pdh = "pdh.main:main"
 
 [tool.poetry.group.dev.dependencies]
-pylint = "^3.2.7"
+pylint = "^3.3.1"
 black = "^24.8.0"
-pytest = "^7.2.0"
+pytest = "^8.3.3"
 pytest-cov = "^4.0.0"
 pytest-mock = "^3.14.0"
-ruff = "^0.6.3"
+ruff = "^0.6.8"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
