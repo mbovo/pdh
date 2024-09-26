@@ -113,6 +113,12 @@ Invalid sort field: unkn
 Available fields: id, assignee, title, status, created_at, last_status_change_at, url
 ```
 
+You can always sort by multiple fields using comma as separator:
+
+```bash
+pdh inc ls --sort assignee,status
+```
+
 ### Auto ACK incoming incidents
 
 Watch for new incidents every 10s and automatically set them to `Acknowledged`

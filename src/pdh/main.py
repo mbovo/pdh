@@ -331,9 +331,15 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 s += f"{i[f]}\t"
             print(s)
 
-        if sort_by :
+
+        if sort_by:
             try:
-                filtered = sorted(filtered, key=lambda x: x[sort_by], reverse=reverse_sort)
+                sort_fields: str|list[str] = sort_by.split(",")  if ',' in sort_by else sort_by
+
+                if isinstance(sort_fields, list) and len(sort_fields) > 1:
+                    filtered = sorted(filtered, key=lambda x: [x[k] for k in sort_fields], reverse=reverse_sort)
+                else:
+                    filtered = sorted(filtered, key=lambda x: x[sort_fields], reverse=reverse_sort)
             except KeyError:
                 print(f"[red]Invalid sort field: {sort_by}[/red]")
                 print(f"[yellow]Available fields: {', '.join(fields)}[/yellow]")
