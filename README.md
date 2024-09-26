@@ -1,6 +1,6 @@
 # PDH - PagerDuty CLI for humans
 
-[![Tag and build](https://github.com/mbovo/pdh/actions/workflows/build-release.yml/badge.svg)](https://github.com/mbovo/pdh/actions/workflows/build-release.yml)
+[![Tag and build](https://github.com/mbovo/pdh/actions/workflows/build-release.yml/badge.svg)](https://github.com/mbovo/pdh/actions/workflows/build-release.yml) [![Nix](https://github.com/mbovo/pdh/actions/workflows/nix.yml/badge.svg)](https://github.com/mbovo/pdh/actions/workflows/nix.yml)
 
 `PDH` is a new lightweight CLI for pagerduty interaction: uou can handle your incidents triage without leaving your terminal.
 It also add some nice tricks to automate the incident triage and easy the on-call burden.
