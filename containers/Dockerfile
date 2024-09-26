@@ -1,4 +1,4 @@
-FROM python:3.11-slim as builder
+FROM python:3.11.10-slim as builder
 WORKDIR /app
 COPY . /app/
 RUN apt-get update && apt-get install -y curl=* \

@@ -18,6 +18,7 @@ from typing import Any
 from .pd import URGENCY_HIGH
 from datetime import datetime
 from rich.pretty import pretty_repr
+from dikdik.dict import get_path
 
 
 class Transformation(object):
@@ -57,7 +58,8 @@ class Transformation(object):
         change_dict: dict = None,
     ):
         def extract(i: dict) -> str:
-            item = i[item_name]
+            #item = i[item_name]
+            item = get_path(i, item_name)
             if change_dict is not None:
                 if i[item_name] in change_dict.keys():
                     item = change_dict[i[item_name]]
