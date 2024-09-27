@@ -14,9 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from typing import Any
-from .pd import URGENCY_HIGH
-from datetime import datetime
+from typing import Any, Callable
+from datetime import datetime, timezone
 from rich.pretty import pretty_repr
 from dikdik.dict import get_path
 
@@ -25,17 +24,18 @@ class Transformation(object):
     """
     Transformation is a collection of methods to transform dictionaries
     """
-
+    @staticmethod
     def identity(field_name):
         def fun(i: dict) -> Any:
             return i[field_name]
 
         return fun
 
-    def extract_date(item_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ"):
+    @staticmethod
+    def extract_date(item_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ", tz: timezone | None = None) -> Callable[[dict], str]:
         def extract(i: dict) -> str:
             d = datetime.strptime(i[item_name], format)
-            duration = datetime.utcnow() - d
+            duration = datetime.now(tz) - d
             data = {}
             data["d"], remaining = divmod(duration.total_seconds(), 86_400)
             data["h"], remaining = divmod(remaining, 3_600)
@@ -49,37 +49,91 @@ class Transformation(object):
 
         return extract
 
-    def extract_field(
-        item_name: str,
-        colors: list = ["red", "cyan"],
-        check_field: str = "urgency",
-        check_value: str = URGENCY_HIGH,
-        check: bool = False,
-        change_dict: dict = None,
-    ):
+    @staticmethod
+    def extract_field(field_name: str, color_map: dict | None = None, default_color: str | None  = None, change_map: dict | None = None, map_func: Callable[[str,dict],str] | None = None,) -> Callable[[dict],str]:
+        """
+        Returns an extracor function that must be used with Filter.do()
+        Retrieve a specific field by name and optionally apply color and formatting.
+        Optionally accept a map_func function to change the field value with custom logic
+
+        Parameters:
+        - field_name (str): The name of the field to extract.
+        - color_map (dict, optional): A dictionary mapping field values to color codes for formatting.
+        - default_color (str, optional): A default color code to apply to the field value.
+        - change_map (dict, optional): A dictionary mapping original field values to new values.
+        - map_func (Callable, optional): A function to apply to the field value for further transformation. Function must be in the form of `func(item:str, d: dict) -> str`
+
+        Returns:
+        - Callable: A function that takes a dictionary and returns the transformed field value as a string.
+        """
         def extract(i: dict) -> str:
-            #item = i[item_name]
-            item = get_path(i, item_name)
-            if change_dict is not None:
-                if i[item_name] in change_dict.keys():
-                    item = change_dict[i[item_name]]
-            if check:
-                if i[check_field] == check_value:
-                    if item[0] != "[":
-                        item = f"{item}".replace("[", "\\[")  # escape [ and ] to avoid rich formatting
-                    return f"[{colors[0]}]{item}[/{colors[0]}]"
-                return f"[{colors[1]}]{item}[/{colors[1]}]"
+            item = get_path(i, field_name)
+
+            if not item:
+                return ""
+            # escape [ and ] to avoid rich formatting clashes
+            if '[' in item or ']' in item:
+                ret = f"{item}".replace("[", "\\[")
             else:
-                return f"{item}"
+                ret = item
+
+            if change_map:
+                # swap the real value with the one in the change_map
+                if item in change_map.keys():
+                    ret = change_map[item]
+
+            if color_map and item in color_map.keys():
+                ret = f"[{color_map[item]}]{ret}[/{color_map[item]}]"
+
+            if map_func is not None:
+                # if a map_func is defined, use it to transform the output
+                try:
+                    ret = map_func(item,i)
+                except Exception as e:
+                    print(f"Error in map_func: {e}")
+
+            if default_color:
+                # if a default_color is defined, use it to color the output
+                ret = f"[{default_color}]{ret}[/{default_color}]"
+
+            return f"{ret}"
 
         return extract
 
-    def extract_assignees(color: str = "magenta") -> str:
+    # @staticmethod
+    # def extract_field_ex(
+    #     item_name: str,
+    #     colors: list = ["red", "cyan"],
+    #     check_field: str = "urgency",
+    #     check_value: str = URGENCY_HIGH,
+    #     check: bool = False,
+    #     change_dict: dict = None,
+    # ):
+    #     def extract(i: dict) -> str:
+    #         #item = i[item_name]
+    #         item = get_path(i, item_name)
+    #         if change_dict is not None:
+    #             if i[item_name] in change_dict.keys():
+    #                 item = change_dict[i[item_name]]
+    #         if check:
+    #             if i[check_field] == check_value:
+    #                 if item[0] != "[":
+    #                     item = f"{item}".replace("[", "\\[")  # escape [ and ] to avoid rich formatting
+    #                 return f"[{colors[0]}]{item}[/{colors[0]}]"
+    #             return f"[{colors[1]}]{item}[/{colors[1]}]"
+    #         else:
+    #             return f"{item}"
+
+    #     return extract
+
+    @staticmethod
+    def extract_assignees(color: str = "magenta") -> Callable[[dict], str]:
         def extract(i: dict) -> str:
             return f'[{color}]{", ".join([a["assignee"]["summary"] for a in i["assignments"]])}[/{color}]'
 
         return extract
 
+    @staticmethod
     def extract_alerts(field_name, alert_fields: list[str] = ["id", "summary", "created_at", "status"]):
         from jsonpath_ng import parse
 
@@ -100,13 +154,16 @@ class Transformation(object):
 
         return extract
 
+    @staticmethod
     def extract_pending_actions():
         return lambda i: str([f"{a['type']} at {a['at']}" for a in i["pending_actions"]])
 
+    @staticmethod
     def extract_users_teams():
         return lambda x: ",".join([t["summary"] for t in x["teams"]])
 
-    def extract_from_dict(field:str, subfield:str , errStr:str = 'unknown_field') -> str:
+    @staticmethod
+    def extract_path(path: str, errStr: str = 'unknown_field') -> Callable[[dict], str]:
         '''
             Extract the subfield the field dictionary
 
@@ -119,16 +176,12 @@ class Transformation(object):
                     "subfield": "value"
                 }
             }
-            extract_from_dict("field", "subfield")(alert) -> "value"
+            extract_from_dict("alert.field.subfield") will produce "value"
         '''
         def extract(i: dict) -> str:
-            if field not in i:
+            try:
+                return get_path(i, path)
+            except KeyError:
                 return errStr
-            if i[field] is not None and isinstance(i[field], dict):
-                if i[field][subfield] is not None:
-                    if isinstance(i[field][subfield], str):
-                        return i[field][subfield]
-                    else:
-                        return str(i[field][subfield])
-            return ""
+
         return extract

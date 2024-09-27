@@ -15,7 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import re
-from typing import List
+from typing import Callable, List
 
 
 class Filter(object):
@@ -24,7 +24,18 @@ class Filter(object):
     useful when used in conjunction with filter()
     """
 
-    def le(field: str, value: int):
+    @staticmethod
+    def le(field: str, value: int) -> Callable[[dict], bool]:
+        """
+        Creates a filter function that checks if the value of a specified field in a dictionary is less than or equal to a given value.
+
+        Args:
+            field (str): The key in the dictionary to compare.
+            value (int): The value to compare against.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field is less than or equal to the given value, otherwise False.
+        """
         def f(item: dict) -> bool:
             if item[field] <= value:
                 return True
@@ -32,7 +43,19 @@ class Filter(object):
 
         return f
 
-    def ge(field: str, value: int):
+    @staticmethod
+    def ge(field: str, value: int)-> Callable[[dict], bool]:
+        def ge(field: str, value: int) -> Callable[[dict], bool]:
+            """
+            Creates a filter function that checks if the value of a specified field in a dictionary is greater than or equal to a given value.
+
+            Args:
+                field (str): The key in the dictionary to check.
+                value (int): The value to compare against.
+
+            Returns:
+                Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field is greater than or equal to the given value, otherwise False.
+            """
         def f(item: dict) -> bool:
             if item[field] >= value:
                 return True
@@ -40,7 +63,18 @@ class Filter(object):
 
         return f
 
-    def lt(field: str, value: int):
+    @staticmethod
+    def lt(field: str, value: int) -> Callable[[dict], bool]:
+        """
+        Creates a filter function that checks if a specified field in a dictionary is less than a given value.
+
+        Args:
+            field (str): The key in the dictionary to compare.
+            value (int): The value to compare against.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the specified field's value is less than the given value, otherwise False.
+        """
         def f(item: dict) -> bool:
             if item[field] < value:
                 return True
@@ -48,7 +82,18 @@ class Filter(object):
 
         return f
 
-    def gt(field: str, value: int):
+    @staticmethod
+    def gt(field: str, value: int) -> Callable[[dict], bool]:
+        """
+        Creates a filter function that checks if the value of a specified field in a dictionary is greater than a given value.
+
+        Args:
+            field (str): The key in the dictionary to compare.
+            value (int): The value to compare against.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field is greater than the given value, otherwise False.
+        """
         def f(item: dict) -> bool:
             if item[field] > value:
                 return True
@@ -56,7 +101,20 @@ class Filter(object):
 
         return f
 
-    def inList(field: str, listOfValues: List[str]):
+    @staticmethod
+    def inList(field: str, listOfValues: List[str]) -> Callable[[dict], bool]:
+        """
+        Creates a filter function that checks if the value of a specified field in a dictionary
+        is within a given list of values.
+
+        Args:
+            field (str): The key in the dictionary to check.
+            listOfValues (List[str]): The list of values to check against.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the
+            value of the specified field is in the list of values, otherwise False.
+        """
         def f(item: dict) -> bool:
             if item[field] in listOfValues:
                 return True
@@ -64,7 +122,18 @@ class Filter(object):
 
         return f
 
-    def inStr(field: str, value: str):
+    @staticmethod
+    def inStr(field: str, value: str) -> Callable[[dict], bool]:
+        """
+        Creates a filter function that checks if a given value is present in the specified field of a dictionary.
+
+        Args:
+            field (str): The key in the dictionary to check.
+            value (str): The value to search for within the specified field.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary as input and returns True if the value is found in the specified field, otherwise False.
+        """
         def f(item: dict) -> bool:
             if value.lower() in item[field].lower():
                 return True
@@ -72,7 +141,18 @@ class Filter(object):
 
         return f
 
-    def ieq(field: str, value: str):
+    @staticmethod
+    def ieq(field: str, value: str) -> Callable[[dict], bool]:
+        """
+        Creates a case-insensitive equality filter function.
+
+        Args:
+            field (str): The key in the dictionary to compare.
+            value (str): The value to compare against.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field matches the given value (case-insensitive), otherwise False.
+        """
         def f(item: dict) -> bool:
             if item[field].lower() == value.lower():
                 return True
@@ -80,7 +160,19 @@ class Filter(object):
 
         return f
 
-    def eq(field: str, value: str):
+    @staticmethod
+    def eq(field: str, value: str) -> Callable[[dict], bool]:
+        """
+        Creates a filter function that checks if a specified field in a dictionary equals a given value.
+
+        Args:
+            field (str): The key in the dictionary to check.
+            value (str): The value to compare against the dictionary's field value.
+
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the specified field's value equals the given value, otherwise False.
+        """
+
         def f(item: dict) -> bool:
             if item[field] == value:
                 return True
@@ -88,18 +180,19 @@ class Filter(object):
 
         return f
 
-    def regexp(field: str, regexp):
+    @staticmethod
+    def regexp(field: str, regexp) -> Callable[[dict], bool]:
         """
-        This is a filters operating on regular expression
+        Creates a filter function that checks if a given field in a dictionary matches a regular expression.
 
-            Parameters:
-                field (str): Any dictionary field on which operate
-                regexp (str or regexp): The regular expression you would validate
+        Args:
+            field (str): The key in the dictionary to be checked.
+            regexp (str or re.Pattern): The regular expression to match against the field's value. If a string is provided, it will be compiled into a regular expression.
 
-            Returns:
-                True if when regexp is found, false otherwise
-
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field matches the regular expression, otherwise False.
         """
+
         if type(regexp) is str:
             regexp = re.compile(regexp)
 
@@ -110,17 +203,15 @@ class Filter(object):
 
         return f
 
-    def not_regexp(field: str, regexp):
+    @staticmethod
+    def not_regexp(field: str, regexp) -> Callable[[dict], bool]:
         """
-        This is a filters operating on regular expression
+        This is a filter operating on regular expressions.
 
-            Parameters:
-                field (str): Any dictionary field on which operate
-                regexp (str or regexp): The regular expression you would validate
+            field (str): Any dictionary field on which to operate.
+            regexp (str or Pattern): The regular expression to validate.
 
-            Returns:
-                False if when regexp is found, True otherwise
-
+            Callable[[dict], bool]: A function that returns False if the regexp is found, True otherwise.
         """
         if type(regexp) is str:
             regexp = re.compile(regexp)
@@ -132,6 +223,7 @@ class Filter(object):
 
         return f
 
+    @staticmethod
     def do(objects: list, transformations: dict|None = None, filters: list = [], preserve : bool = False) -> list:
         """Given a list of objects, apply every transformations and filters on it, return the new filtered list
         Transformations is a dict of "key": func(item) where key is the destination key and func(item) the

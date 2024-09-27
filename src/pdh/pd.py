@@ -194,3 +194,63 @@ class Users(PD):
     def userID_by_name(self, query):
         """Retrieve all usersIDs matching the given (partial) name"""
         return self.userIDs(query, "name")
+
+class Services(PD):
+    def list(self,params: dict | None = None) -> list(dict()):
+        """List all services in PagerDuty account"""
+        if params:
+            services = self.session.iter_all("services", params=params)
+        else:
+            services = self.session.iter_all("services")
+        return services
+
+    def get(self, id: str) -> Dict:
+        """Get a single service by ID"""
+        return self.session.rget(f"/services/{id}")
+
+    def search(self, query: str, key: str = "name") -> List[dict]:
+        """Retrieve all services matching query on the attribute name"""
+
+        def equiv(s):
+            return query.lower() in s[key].lower()
+
+        services = [u for u in filter(equiv, self.session.iter_all("services"))]
+        return services
+
+    def serviceIDs(self, query: str, key: str = "name") -> List[str]:
+        """Retrieve all serviceIDs matching query on the attribute name"""
+        services = self.search(query, key)
+        serviceIDs = [u["id"] for u in services]
+        return serviceIDs
+
+    def serviceID_by_name(self, query):
+        """Retrieve all serviceIDs matching the given (partial) name"""
+        return self.serviceIDs(query, "name")
+
+    def serviceID_by_description(self, query):
+        """Retrieve all serviceIDs matching the given (partial) description"""
+        return self.serviceIDs(query, "description")
+
+    def serviceID_by_team(self, query):
+        """Retrieve all serviceIDs matching the given (partial) team"""
+        return self.serviceIDs(query, "team")
+
+    def serviceID_by_type(self, query):
+        """Retrieve all serviceIDs matching the given (partial) type"""
+        return self.serviceIDs(query, "type")
+
+    def serviceID_by_integration(self, query):
+        """Retrieve all serviceIDs matching the given (partial) integration"""
+        return self.serviceIDs(query, "integration")
+
+    def serviceID_by_escalation_policy(self, query):
+        """Retrieve all serviceIDs matching the given (partial) escalation_policy"""
+        return self.serviceIDs(query, "escalation_policy")
+
+    def serviceID_by_auto_resolve_timeout(self, query):
+        """Retrieve all serviceIDs matching the given (partial) auto_resolve_timeout"""
+        return self.serviceIDs(query, "auto_resolve_timeout")
+
+    def serviceID_by_acknowledge_timeout(self, query):
+        """Retrieve all serviceIDs matching the given (partial) acknowledge_timeout"""
+        return self.serviceIDs(query, "acknowledge_timeout")

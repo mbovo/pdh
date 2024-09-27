@@ -92,7 +92,7 @@ def test_extract_field() -> None:
     assert result[2]["newfield"] == "orange"
 
 def test_extract_field_change() -> None:
-    t: dict = {"newfield": Transformation.extract_field("strfield", change_dict={"apple": "banana"})}
+    t: dict = {"newfield": Transformation.extract_field("strfield", change_map={"apple": "banana"})}
     result = Filter.do(ilist, t, [])
     assert len(result) == 3
     assert result[0]["newfield"] == "banana"
@@ -100,8 +100,8 @@ def test_extract_field_change() -> None:
     assert result[2]["newfield"] == "orange"
 
 
-def test_extract_from_dict():
-    t: dict = {"newfield": Transformation.extract_from_dict("dictfield", "inside", "-x-")}
+def test_extract_path():
+    t: dict = {"newfield": Transformation.extract_path("dictfield.inside", "-x-")}
     result = Filter.do(ilist, t, [])
     assert len(result) == 3
     assert result[0]["newfield"] == "-x-"
