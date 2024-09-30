@@ -25,7 +25,7 @@ class Transformation(object):
     Transformation is a collection of methods to transform dictionaries
     """
     @staticmethod
-    def identity(field_name):
+    def identity(field_name) -> Callable[..., Any]:
         def fun(i: dict) -> Any:
             return i[field_name]
 
@@ -99,32 +99,6 @@ class Transformation(object):
             return f"{ret}"
 
         return extract
-
-    # @staticmethod
-    # def extract_field_ex(
-    #     item_name: str,
-    #     colors: list = ["red", "cyan"],
-    #     check_field: str = "urgency",
-    #     check_value: str = URGENCY_HIGH,
-    #     check: bool = False,
-    #     change_dict: dict = None,
-    # ):
-    #     def extract(i: dict) -> str:
-    #         #item = i[item_name]
-    #         item = get_path(i, item_name)
-    #         if change_dict is not None:
-    #             if i[item_name] in change_dict.keys():
-    #                 item = change_dict[i[item_name]]
-    #         if check:
-    #             if i[check_field] == check_value:
-    #                 if item[0] != "[":
-    #                     item = f"{item}".replace("[", "\\[")  # escape [ and ] to avoid rich formatting
-    #                 return f"[{colors[0]}]{item}[/{colors[0]}]"
-    #             return f"[{colors[1]}]{item}[/{colors[1]}]"
-    #         else:
-    #             return f"{item}"
-
-    #     return extract
 
     @staticmethod
     def extract_assignees(color: str = "magenta") -> Callable[[dict], str]:

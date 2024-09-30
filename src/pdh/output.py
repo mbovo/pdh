@@ -73,10 +73,23 @@ class Output(object):
 
 
 def print_items(
-    items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
-) -> None:
-    getattr(Output(), output)(items=items, skip_columns=skip_columns, print_f=plain_print_f, console=console, odd_color=odd_color, even_color=even_color)
+        items,
+        output,
+        skip_columns: list = [],
+        plain_print_f = None,
+        console: Console = Console(),
+        odd_color: str = "grey93 on black",
+        even_color: str = "grey50 on black"
+    ) -> None:
+
+    getattr(Output(), output)(
+        items=items,
+        skip_columns=skip_columns,
+        print_f=plain_print_f,
+        console=console,
+        odd_color=odd_color,
+        even_color=even_color)
 
 
-def print(*args, **kwargs):
+def print(*args, **kwargs) -> None:
     rich_print(*args, **kwargs)

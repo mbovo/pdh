@@ -22,7 +22,9 @@ from .output import print, print_items
 
 
 class PDH(object):
-    def list_user(cfg: Config, output: str, fields: list = None) -> bool:
+
+    @staticmethod
+    def list_user(cfg: Config, output: str, fields: list | None = None) -> bool:
         try:
             if fields is None:
                 fields = ["id", "name", "email", "time_zone", "role", "job_title", "teams"]
@@ -37,7 +39,7 @@ class PDH(object):
             else:
                 t = {}
                 for f in fields:
-                    t[f] = Transformation.extract_field(f, check=False)
+                    t[f] = Transformation.extract_field(f)
                 if "teams" in fields:
                     t["teams"] = Transformation.extract_users_teams()
                 filtered = Filter.do(users, t, [])
@@ -48,7 +50,8 @@ class PDH(object):
             print(f"[red]{e}[/red]")
             return False
 
-    def get_user(cfg: Config, user: str, output: str, fields: list = None):
+    @staticmethod
+    def get_user(cfg: Config, user: str, output: str, fields: list | None = None):
         try:
             u = Users(cfg)
             users = u.search(user)
@@ -67,7 +70,7 @@ class PDH(object):
             else:
                 transformations = {}
                 for t in fields:
-                    transformations[t] = Transformation.extract_field(t, check=False)
+                    transformations[t] = Transformation.extract_field(t)
                 transformations["teams"] = Transformation.extract_users_teams()
 
                 filtered = Filter.do(users, transformations, [])
@@ -78,6 +81,7 @@ class PDH(object):
             print(f"[red]{e}[/red]")
             return False
 
+    @staticmethod
     def ack(cfg: Config, incIDs: list = []) -> None:
         pd = Incidents(cfg)
         incs = pd.list()
@@ -86,6 +90,7 @@ class PDH(object):
             print(f"[yellow]✔[/yellow] {i['id']} [grey50]{i['title']}[/grey50]")
         pd.ack(incs)
 
+    @staticmethod
     def resolve(cfg: Config, incIDs: list = []) -> None:
         pd = Incidents(cfg)
         incs = pd.list()
@@ -94,6 +99,7 @@ class PDH(object):
             print(f"[green]✅[/green] {i['id']} [grey50]{i['title']}[/grey50]")
         pd.resolve(incs)
 
+    @staticmethod
     def snooze(cfg: Config, incIDs: list = [], duration: int = 14400) -> None:
         pd = Incidents(cfg)
         import datetime
@@ -105,7 +111,8 @@ class PDH(object):
 
         pd.snooze(incs, duration)
 
-    def reassign(cfg: Config, incIDs: list = [], user: str = None):
+    @staticmethod
+    def reassign(cfg: Config, incIDs: list = [], user: str | None = None):
         pd = Incidents(cfg)
         incs = pd.list()
         incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])

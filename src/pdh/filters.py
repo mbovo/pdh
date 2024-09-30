@@ -45,17 +45,16 @@ class Filter(object):
 
     @staticmethod
     def ge(field: str, value: int)-> Callable[[dict], bool]:
-        def ge(field: str, value: int) -> Callable[[dict], bool]:
-            """
-            Creates a filter function that checks if the value of a specified field in a dictionary is greater than or equal to a given value.
+        """
+        Creates a filter function that checks if the value of a specified field in a dictionary is greater than or equal to a given value.
 
-            Args:
-                field (str): The key in the dictionary to check.
-                value (int): The value to compare against.
+        Args:
+            field (str): The key in the dictionary to check.
+            value (int): The value to compare against.
 
-            Returns:
-                Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field is greater than or equal to the given value, otherwise False.
-            """
+        Returns:
+            Callable[[dict], bool]: A function that takes a dictionary and returns True if the value of the specified field is greater than or equal to the given value, otherwise False.
+        """
         def f(item: dict) -> bool:
             if item[field] >= value:
                 return True
