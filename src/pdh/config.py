@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from typing import Any
+from typing import Any, Dict
 import yaml
 import os
 import sys
@@ -31,7 +31,7 @@ class Config(object):
         super().__init__()
         self.cfg = {}
 
-    def from_yaml(self, path, key: str = None) -> None:
+    def from_yaml(self, path, key: str | None = None) -> None:
         """Load configuration from a yaml file, store it directly or under the specified key (if any)"""
 
         with open(os.path.expanduser(path), "r") as f:
@@ -41,6 +41,12 @@ class Config(object):
         else:
             self.cfg.update(o)
 
+    def from_dict(self, d: Dict) -> None:
+        self.cfg.update(d)
+
+    def to_dict(self) -> Dict:
+        return self.cfg.copy()
+
     def to_yaml(self, fileName: str) -> None:
         with open(os.path.expanduser(fileName), "w") as f:
             yaml.safe_dump(self.cfg, f)
@@ -49,7 +55,7 @@ class Config(object):
         with open(os.path.expanduser(fileName), "w") as f:
             json.dump(self.cfg, f)
 
-    def from_json(self, path, key: str = None) -> None:
+    def from_json(self, path, key: str | None = None) -> None:
         """Load configuration from a json file, store it directly or under the specified key (if any)"""
         with open(os.path.expanduser(path), "r") as f:
             o = json.load(f)
@@ -77,14 +83,14 @@ class Config(object):
     def __str__(self) -> str:
         return repr(self.cfg)
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         return key in self.cfg
 
 
 config = Config()
 
 
-def load_and_validate(fileName: str) -> dict:
+def load_and_validate(fileName: str) -> Config:
     config.from_yaml(fileName)
     if not config.validate():
         print("[red]Invalid or missing config, try pdh config[/red]")

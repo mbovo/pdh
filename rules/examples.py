@@ -16,7 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 # Needed imports
-from pdh import rules, Filter
+from pdh import rules, Filters
 
 
 # This annotation make the main() method parse stdin as json into the parameter called input
@@ -28,7 +28,7 @@ def main(input):
     api = rules.api()
 
     # From the given input extract only incidents with the word cassandra in title
-    incs = Filter.do(input, filters=[Filter.regexp("title", ".*EC2.*")])
+    incs = Filters.apply(input, filters=[Filters.regexp("title", ".*EC2.*")])
 
     # ackwnoledge all previously filtered incidents
     api.ack(incs)

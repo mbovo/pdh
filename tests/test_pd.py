@@ -21,9 +21,12 @@ import json
 
 from requests.models import Response
 from pdh import pd
+from pdh.config import Config
 
 
 class FakePD(object):
+
+    @staticmethod
     def list_all(*args, **kwargs) -> List:
         ret = []
         loaded = []
@@ -48,6 +51,7 @@ class FakePD(object):
 
         return ret
 
+    @staticmethod
     def iter_all(*args, **kwargs) -> List:
         loaded = []
         if args[1] == "users":
@@ -55,18 +59,23 @@ class FakePD(object):
                 loaded = json.load(f)
         return loaded
 
+    @staticmethod
     def put_incident(addr: str, json: list):
         return json
 
+    @staticmethod
     def get(addr: str, **kwargs) -> Response:
         return Response()
 
+    @staticmethod
     def post(addr: str, json: dict) -> Response:
         return Response()
 
+    @staticmethod
     def rput(*argv, **kwargs) -> Response:
         return Response()
 
+    @staticmethod
     def rget(*argv, **kawargs) -> List:
         loaded = []
         ret = []
@@ -89,13 +98,15 @@ class FakePD(object):
 
 
 @pytest.fixture
-def config() -> Dict:
+def config() -> Config:
     # This is the test token from https://developer.pagerduty.com/api-reference
-    return {"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@domain.tld", "uid": "PXCT22H"}
+    c = Config()
+    c.from_dict({"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@domain.tld", "uid": "PXCT22H"})
+    return c
 
 
 @pytest.fixture
-def incidents(mocker: MockerFixture, config: Dict) -> pd.Incidents:
+def incidents(mocker: MockerFixture, config: Config) -> pd.Incidents:
     mocker.patch("pdpyras.APISession.iter_all", side_effect=FakePD.iter_all)
     mocker.patch("pdpyras.APISession.rget", side_effect=FakePD.rget)
     mocker.patch("pdpyras.APISession.list_all", side_effect=FakePD.list_all)
@@ -106,7 +117,7 @@ def incidents(mocker: MockerFixture, config: Dict) -> pd.Incidents:
 
 
 @pytest.fixture
-def users(mocker: MockerFixture, config: Dict) -> pd.Users:
+def users(mocker: MockerFixture, config: Config) -> pd.Users:
     mocker.patch("pdpyras.APISession.iter_all", side_effect=FakePD.iter_all)
     mocker.patch("pdpyras.APISession.rget", side_effect=FakePD.rget)
     mocker.patch("pdpyras.APISession.list_all", side_effect=FakePD.list_all)

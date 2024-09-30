@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from .transformations import Transformation as _Transformation
-from .filters import Filter as _Filter
+from . import transformations as _Transformations
+from .filters import Filter as _Filters
 from .pd import Users as _Users, Incidents as _Incidents
 
 # Exposing Internal things
-Transformation = _Transformation
-Filter = _Filter
+Transformations = _Transformations
+Filters = _Filters
 Users = _Users
 Incidents = _Incidents

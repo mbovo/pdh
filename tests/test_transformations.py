@@ -15,8 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-from pdh.filters import Filter
-from pdh.transformations import Transformation
+from pdh import Transformations
 import datetime
 
 apple = {
@@ -78,39 +77,39 @@ orange = {
 ilist = [apple, kiwi, orange]
 
 def test_extract_date()-> None:
-    t = Transformation.extract_date("bestbefore")
-    result = Filter.do(ilist, {"bestbefore": t}, [])
+    t = Transformations.extract_date("bestbefore")
+    result = Transformations.apply(ilist, {"bestbefore": t})
     assert len(result) == 3
 
 
 def test_extract_field() -> None:
-    t: dict = {"newfield": Transformation.extract_field("strfield")}
-    result = Filter.do(ilist, t, [])
+    t: dict = {"newfield": Transformations.extract("strfield")}
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "apple"
     assert result[1]["newfield"] == "kiwi"
     assert result[2]["newfield"] == "orange"
 
 def test_extract_field_change() -> None:
-    t: dict = {"newfield": Transformation.extract_field("strfield", change_dict={"apple": "banana"})}
-    result = Filter.do(ilist, t, [])
+    t: dict = {"newfield": Transformations.extract_change("strfield", change_map={"apple": "banana"})}
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "banana"
     assert result[1]["newfield"] == "kiwi"
     assert result[2]["newfield"] == "orange"
 
 
-def test_extract_from_dict():
-    t: dict = {"newfield": Transformation.extract_from_dict("dictfield", "inside", "-x-")}
-    result = Filter.do(ilist, t, [])
+def test_extract_path():
+    t: dict = {"newfield": Transformations.extract("dictfield.inside", "-x-")}
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "-x-"
     assert result[1]["newfield"] == "-x-"
     assert result[2]["newfield"] == "worm"
 
 def test_extract_assignees() -> None:
-    t: dict = {"newfield": Transformation.extract_assignees()}
-    result = Filter.do(ilist, t, [])
+    t: dict = {"newfield": Transformations.extract_assignees("magenta")}
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "[magenta]Rakhi[/magenta]"
     assert result[1]["newfield"] == "[magenta]Prasanna[/magenta]"

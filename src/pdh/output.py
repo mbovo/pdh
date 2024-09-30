@@ -63,7 +63,8 @@ class Output(object):
                     t.add_column(k)
             i = 0
             for u in items:
-                args = [v for k, v in u.items() if k not in skip_columns]
+                args = [repr(v) if isinstance(v, dict) else v for k, v in u.items() if k not in skip_columns]
+
                 if i % 2:
                     t.add_row(*args, style=odd_color)
                 else:
@@ -73,10 +74,23 @@ class Output(object):
 
 
 def print_items(
-    items, output, skip_columns: list = [], plain_print_f=None, console: Console = Console(), odd_color: str = "grey93 on black", even_color: str = "grey50 on black"
-) -> None:
-    getattr(Output(), output)(items=items, skip_columns=skip_columns, print_f=plain_print_f, console=console, odd_color=odd_color, even_color=even_color)
+        items,
+        output,
+        skip_columns: list = [],
+        plain_print_f = None,
+        console: Console = Console(),
+        odd_color: str = "grey93 on black",
+        even_color: str = "grey50 on black"
+    ) -> None:
+
+    getattr(Output(), output)(
+        items=items,
+        skip_columns=skip_columns,
+        print_f=plain_print_f,
+        console=console,
+        odd_color=odd_color,
+        even_color=even_color)
 
 
-def print(*args, **kwargs):
+def print(*args, **kwargs) -> None:
     rich_print(*args, **kwargs)

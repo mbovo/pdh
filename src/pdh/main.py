@@ -22,18 +22,19 @@ import os
 import time
 from rich import print
 from rich.console import Console
+from datetime import timezone
 from .core import PDH
 
-from .pd import Users, Incidents
+from .pd import Services, Users, Incidents
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
+    STATUS_RESOLVED,
     URGENCY_HIGH,
     URGENCY_LOW,
     DEFAULT_URGENCIES,
 )
-from .transformations import Transformation
-from .filters import Filter
+from . import Filters, Transformations
 from .config import load_and_validate, setup_config
 from .output import print_items, VALID_OUTPUTS
 
@@ -188,7 +189,7 @@ def apply(ctx, incident, path, output, script):
     pd = Incidents(ctx.obj)
     incs = pd.list()
     if incident:
-        incs = Filter.do(incs, filters=[Filter.inList("id", incident)])
+        incs = Filters.apply(incs, [Filters.inList("id", incident)])
 
     # load the given parameters
     scripts = script
@@ -227,15 +228,7 @@ def apply(ctx, incident, path, output, script):
 @click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
 @click.option("--rules-path", required=False, default="~/.config/pdh_rules", help="Apply all executable find in this path")
 @click.option("-R", "--regexp", default="", help="regexp to filter incidents")
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
+@click.option("-o","--output","output",help="output format",required=False,type=click.Choice(VALID_OUTPUTS),default="table")
 @click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
 @click.option("--alerts", "alerts", required=False, help="Show alerts associated to each incidents", is_flag=True, default=False)
 @click.option("--alert-fields", "alert_fields", required=False, help="Show these alert fields only, comma separated", default=None)
@@ -274,27 +267,29 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     if type(fields) is str:
         fields = fields.lower().strip().split(",")
     else:
-        fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
+        fields = ["id", "assignee", "title", "status", "created_at","service.summary"]
     if alerts:
         fields.append("alerts")
 
     if type(alert_fields) is str:
         alert_fields = alert_fields.lower().strip().split(",")
     else:
-        alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
+        alert_fields = ["status", "created_at", "service.summary", "body.details"]
 
     if not everything and not userid:
         userid = pd.cfg["uid"]
     while True:
         incs = pd.list(userid, statuses=status, urgencies=urgencies)
-        # BUGFIX: filter by regexp must be applyed to the original list, not only to the transformed one
-        incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
+
+        incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
         if service_re:
-            incs = Filter.do(incs, transformations={"service": Transformation.extract_from_dict("service","summary")}, filters=[Filter.regexp("service", service_re)], preserve=True)
+            incs = Transformations.apply(incs, {"service": Transformations.extract("service.summary")}, preserve=True)
+            incs = Filters.apply(incs, [Filters.regexp("service", service_re)])
 
         if excluded_service_re:
-            incs = Filter.do(incs, transformations={"service": Transformation.extract_from_dict("service","summary")}, filters=[Filter.not_regexp("service", excluded_service_re)], preserve=True)
+            incs = Transformations.apply(incs, {"service": Transformations.extract("service.summary")}, preserve=True)
+            incs = Filters.apply(incs, [Filters.not_regexp("service", excluded_service_re)])
 
         if alerts:
             for i in incs:
@@ -304,22 +299,31 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         if output != "raw":
             transformations = dict()
             for f in fields:
-                transformations[f] = Transformation.extract_field(f)
+                transformations[f] = Transformations.extract(f)
                 # special cases
                 if f == "assignee":
-                    transformations[f] = Transformation.extract_assignees()
+                    transformations[f] = Transformations.extract_assignees()
                 if f == "status":
-                    transformations[f] = Transformation.extract_field("status", ["red", "yellow"], "status", STATUS_TRIGGERED, True, {STATUS_ACK: "✔", STATUS_TRIGGERED: "✘"})
+                    transformations[f] = Transformations.extract_decorate("status", color_map={STATUS_TRIGGERED: "red", STATUS_ACK: "yellow", STATUS_RESOLVED: "green"}, default_color="cyan", change_map={STATUS_TRIGGERED: "✘", STATUS_ACK: "✔", STATUS_RESOLVED: "✔"})
                 if f == "url":
-                    transformations[f] = Transformation.extract_field("html_url")
+                    transformations[f] = Transformations.extract("html_url")
+                if f == "urgency":
+                    transformations[f] = Transformations.extract_decorate("urgency", color_map={URGENCY_HIGH: "red", URGENCY_LOW: "green"}, change_map={URGENCY_HIGH: "HIGH", URGENCY_LOW: "LOW"})
+                if f == "service.summary":
+                    transformations["service"] = Transformations.extract("service.summary")
                 if f in ["title", "urgency"]:
-                    transformations[f] = Transformation.extract_field(f, check=True)
-                if f in ["created_at", "last_status_change_at"]:
-                    transformations[f] = Transformation.extract_date(f)
-                if f in ["alerts"]:
-                    transformations[f] = Transformation.extract_alerts(f, alert_fields)
+                    def mapper(item:str, d:dict) -> str:
+                        if "urgency" in d and d["urgency"] == URGENCY_HIGH:
+                            return f"[red]{item}[/red]"
+                        return f"[cyan]{item}[/cyan]"
 
-            filtered = Filter.do(incs, transformations)
+                    transformations[f] = Transformations.extract_decorate(f, default_color="cyan", color_map={
+                                                                 URGENCY_HIGH: "red"}, map_func=mapper)
+                if f in ["created_at", "last_status_change_at"]:
+                    transformations[f] = Transformations.extract_date(f)
+                if f in ["alerts"]:
+                    transformations[f] = Transformations.extract_alerts(f, alert_fields)
+            filtered = Transformations.apply(incs, transformations)
         else:
             # raw output, using json format
             filtered = incs
@@ -390,3 +394,81 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             break
         time.sleep(timeout)
         console.clear()
+
+@main.group(help="Operater on Services", name="svc")
+@click.option(
+    "-c",
+    "--config",
+    envvar="PDH_CONFIG",
+    default="~/.config/pdh.yaml",
+    help="Configuration file location (default: ~/.config/pdh.yaml)",
+)
+@click.pass_context
+def svc(ctx, config):
+    cfg = load_and_validate(config)
+    ctx.ensure_object(dict)
+    ctx.obj = cfg
+
+
+@svc.command(help="List services", name="ls")
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
+@click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
+@click.option("--sort", "sort_by", required=False, help="Sort by field name", default=None)
+@click.option("--reverse", "reverse_sort", required=False, help="Reverse the sort", is_flag=True, default=False)
+@click.option("-s", "--status", "status", required=False, help="Filter for service status", default="active,warning,critical")
+@click.pass_context
+def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
+    svcs = []
+    pd = Services(ctx.obj)
+
+    svcs = pd.list()
+
+    # filtering
+    svcs = Filters.apply(svcs, [Filters.inList("status", status.split(","))])
+
+    # set fields that will be displayed
+    if type(fields) is str:
+        fields = fields.lower().strip().split(",")
+    else:
+        fields = ["id", "name", "description", "status","created_at", "updated_at", "html_url"]
+
+    if output != "raw":
+        transformations = dict()
+
+        for f in fields:
+            transformations[f] = Transformations.extract(f)
+            # special cases
+            if f == "status":
+                transformations[f] = Transformations.extract_decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
+            if f == "url":
+                transformations[f] = Transformations.extract("html_url")
+            if f in ["created_at", "updated_at"]:
+                transformations[f] = Transformations.extract_date(f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc )
+
+        filtered = Transformations.apply(svcs, transformations)
+    else:
+        # raw output, using json format
+        filtered = svcs
+
+        # define here how print in "plain" way (ie if output=plain)
+    def plain_print_f(i):
+        s = ""
+        for f in fields:
+            s += f"{i[f]}\t"
+        print(s)
+
+
+    if sort_by:
+        try:
+            sort_fields: str|list[str] = sort_by.split(",")  if ',' in sort_by else sort_by
+
+            if isinstance(sort_fields, list) and len(sort_fields) > 1:
+                filtered = sorted(filtered, key=lambda x: [x[k] for k in sort_fields], reverse=reverse_sort)
+            else:
+                filtered = sorted(filtered, key=lambda x: x[sort_fields], reverse=reverse_sort)
+        except KeyError:
+            print(f"[red]Invalid sort field: {sort_by}[/red]")
+            print(f"[yellow]Available fields: {', '.join(fields)}[/yellow]")
+            sys.exit(-2)
+
+    print_items(filtered, output, plain_print_f=plain_print_f)

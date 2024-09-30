@@ -72,7 +72,7 @@ def exec(cmd: Union[str, list]) -> ShellResponse:
     return ShellResponse(out, err, rc)
 
 
-def chain(incs: list, path: str, pd: Incidents = None):
+def chain(incs: list, path: str, pd: Incidents | None = None):
     """
     Chain loading another rule with the given list of incidents
       Parameters:
@@ -94,7 +94,7 @@ def chain(incs: list, path: str, pd: Incidents = None):
     return None
 
 
-def api(config_file: str = "~/.config/pdh.yaml"):
+def api(config_file: str = "~/.config/pdh.yaml") -> Incidents:
 
     """
     Initializate the Pagerduty APIs in a more easy way
