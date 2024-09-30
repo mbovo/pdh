@@ -25,6 +25,8 @@ from pdh.config import Config
 
 
 class FakePD(object):
+
+    @staticmethod
     def list_all(*args, **kwargs) -> List:
         ret = []
         loaded = []
@@ -49,6 +51,7 @@ class FakePD(object):
 
         return ret
 
+    @staticmethod
     def iter_all(*args, **kwargs) -> List:
         loaded = []
         if args[1] == "users":
@@ -56,18 +59,23 @@ class FakePD(object):
                 loaded = json.load(f)
         return loaded
 
+    @staticmethod
     def put_incident(addr: str, json: list):
         return json
 
+    @staticmethod
     def get(addr: str, **kwargs) -> Response:
         return Response()
 
+    @staticmethod
     def post(addr: str, json: dict) -> Response:
         return Response()
 
+    @staticmethod
     def rput(*argv, **kwargs) -> Response:
         return Response()
 
+    @staticmethod
     def rget(*argv, **kawargs) -> List:
         loaded = []
         ret = []

@@ -15,8 +15,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import re
-from typing import Callable, List
-
+from typing import Callable, Iterator, List, Dict, Any
+from dikdik import Dict as DikDik
 
 class Filter(object):
     """
@@ -223,12 +223,21 @@ class Filter(object):
         return f
 
     @staticmethod
-    def do(objects: list, transformations: dict|None = None, filters: list = [], preserve : bool = False) -> list:
-        """Given a list of objects, apply every transformations and filters on it, return the new filtered list
-        Transformations is a dict of "key": func(item) where key is the destination key and func(item) the
-                        function to used to extract values from the original list (see Transformation class)
-        Filters is a list of functions in the form f(item:Any)->bool the item will be in the returned list
-                        if the function returns True
+    def do(objects: List | List[Dict[Any,Any]] | Iterator,
+           transformations: dict|None = None,
+           filters: list = [],
+           preserve : bool = False) -> list:
+        """
+        Filters and transforms a collection of objects.
+
+        Args:
+            objects (Iterator): An iterator of objects to be filtered and transformed.
+            transformations (dict | None, optional): A dictionary where keys are paths and values are functions to transform the objects. Defaults to None.
+            filters (list, optional): A list of filter functions to apply to the objects. Defaults to an empty list.
+            preserve (bool, optional): If True, preserves the original fields when apply transformations. If False, applies transformations directly. Defaults to False.
+
+        Returns:
+            list: A list of filtered and transformed objects.
         """
         ret = list()
         for obj in objects:
@@ -238,7 +247,8 @@ class Filter(object):
                 else:
                     item = {}
                 for path, func in transformations.items():
-                    item[path] = func(obj)
+                    # using dikdik.dict.set_path
+                    DikDik.set_path(item, path, func(obj))
                 ret.append(item)
             else:
                 ret.append(obj)

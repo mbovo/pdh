@@ -309,13 +309,13 @@ packaging = "*"
 
 [[package]]
 name = "dikdik"
-version = "0.1.6"
+version = "0.1.7"
 description = "dikdik - Common utils library"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "dikdik-0.1.6-py3-none-any.whl", hash = "sha256:dffa5d792fd1f1cd2d867f2789c342d1997f7734ae80d496355c414d3eba8ffe"},
-    {file = "dikdik-0.1.6.tar.gz", hash = "sha256:1861cbdfdbc19ba2b64d2f4d6f8bf96dea07534eb9691f03de3bfcd371be5447"},
+    {file = "dikdik-0.1.7-py3-none-any.whl", hash = "sha256:b69e30dc42e5e7a35235ca328358c79f13f6394cb255e15f5abcd2baceb2ef90"},
+    {file = "dikdik-0.1.7.tar.gz", hash = "sha256:5357c29425e954db885ed89c8ada85085133dbf562f8d71f2d65ea2c5779bcca"},
 ]
 
 [package.dependencies]
