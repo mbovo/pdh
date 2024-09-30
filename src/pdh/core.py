@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from .transformations import Transformation
+from pdh import Transformations
 from .filters import Filter
 from .pd import UnauthorizedException, Users, Incidents
 from .config import Config
@@ -39,10 +39,10 @@ class PDH(object):
             else:
                 t = {}
                 for f in fields:
-                    t[f] = Transformation.extract_field(f)
+                    t[f] = Transformations.extract(f)
                 if "teams" in fields:
-                    t["teams"] = Transformation.extract_users_teams()
-                filtered = Filter.do(users, t, [])
+                    t["teams"] = Transformations.extract_users_teams()
+                filtered = Transformations.transform(users, t)
 
             print_items(filtered, output)
             return True
@@ -70,10 +70,10 @@ class PDH(object):
             else:
                 transformations = {}
                 for t in fields:
-                    transformations[t] = Transformation.extract_field(t)
-                transformations["teams"] = Transformation.extract_users_teams()
+                    transformations[t] = Transformations.extract(t)
+                transformations["teams"] = Transformations.extract_users_teams()
 
-                filtered = Filter.do(users, transformations, [])
+                filtered = Transformations.transform(users, transformations)
 
             print_items(filtered, output)
             return True
@@ -85,7 +85,7 @@ class PDH(object):
     def ack(cfg: Config, incIDs: list = []) -> None:
         pd = Incidents(cfg)
         incs = pd.list()
-        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
+        incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for i in incs:
             print(f"[yellow]✔[/yellow] {i['id']} [grey50]{i['title']}[/grey50]")
         pd.ack(incs)
@@ -94,7 +94,7 @@ class PDH(object):
     def resolve(cfg: Config, incIDs: list = []) -> None:
         pd = Incidents(cfg)
         incs = pd.list()
-        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
+        incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for i in incs:
             print(f"[green]✅[/green] {i['id']} [grey50]{i['title']}[/grey50]")
         pd.resolve(incs)
@@ -105,7 +105,7 @@ class PDH(object):
         import datetime
 
         incs = pd.list()
-        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
+        incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for id in incIDs:
             print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
 
@@ -115,7 +115,7 @@ class PDH(object):
     def reassign(cfg: Config, incIDs: list = [], user: str | None = None):
         pd = Incidents(cfg)
         incs = pd.list()
-        incs = Filter.do(incs, filters=[Filter.inList("id", incIDs)])
+        incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
 
         users = Users(cfg).userID_by_name(user)
         if users is None or len(users) == 0:

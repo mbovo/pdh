@@ -34,8 +34,7 @@ from .pd import (
     URGENCY_LOW,
     DEFAULT_URGENCIES,
 )
-from .transformations import Transformation
-from .filters import Filter
+from . import Filters, Transformations
 from .config import load_and_validate, setup_config
 from .output import print_items, VALID_OUTPUTS
 
@@ -190,7 +189,7 @@ def apply(ctx, incident, path, output, script):
     pd = Incidents(ctx.obj)
     incs = pd.list()
     if incident:
-        incs = Filter.do(incs, filters=[Filter.inList("id", incident)])
+        incs = Filters.apply(incs, [Filters.inList("id", incident)])
 
     # load the given parameters
     scripts = script
@@ -281,14 +280,16 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         userid = pd.cfg["uid"]
     while True:
         incs = pd.list(userid, statuses=status, urgencies=urgencies)
-        # BUGFIX: filter by regexp must be applyed to the original list, not only to the transformed one
-        incs = Filter.do(incs, filters=[Filter.regexp("title", filter_re)])
+
+        incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
         if service_re:
-            incs = Filter.do(incs, transformations={"service": Transformation.extract_path("service.summary")}, filters=[Filter.regexp("service", service_re)], preserve=True)
+            incs = Transformations.transform(incs, {"service": Transformations.extract("service.summary")}, copy=True)
+            incs = Filters.apply(incs, [Filters.regexp("service", service_re)])
 
         if excluded_service_re:
-            incs = Filter.do(incs, transformations={"service": Transformation.extract_path("service.summary")}, filters=[Filter.not_regexp("service", excluded_service_re)], preserve=True)
+            incs = Transformations.transform(incs, {"service": Transformations.extract("service.summary")}, copy=True)
+            incs = Filters.apply(incs, [Filters.not_regexp("service", excluded_service_re)])
 
         if alerts:
             for i in incs:
@@ -298,27 +299,27 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         if output != "raw":
             transformations = dict()
             for f in fields:
-                transformations[f] = Transformation.extract_field(f)
+                transformations[f] = Transformations.extract(f)
                 # special cases
                 if f == "assignee":
-                    transformations[f] = Transformation.extract_assignees()
+                    transformations[f] = Transformations.extract_assignees()
                 if f == "status":
-                    transformations[f] = Transformation.extract_field("status", color_map={STATUS_TRIGGERED: "red", STATUS_ACK: "yellow", STATUS_RESOLVED: "green"}, default_color="cyan", change_map={STATUS_TRIGGERED: "✘", STATUS_ACK: "✔", STATUS_RESOLVED: "✔"})
+                    transformations[f] = Transformations.decorate("status", color_map={STATUS_TRIGGERED: "red", STATUS_ACK: "yellow", STATUS_RESOLVED: "green"}, default_color="cyan", change_map={STATUS_TRIGGERED: "✘", STATUS_ACK: "✔", STATUS_RESOLVED: "✔"})
                 if f == "url":
-                    transformations[f] = Transformation.extract_field("html_url")
+                    transformations[f] = Transformations.extract("html_url")
                 if f in ["title", "urgency"]:
                     def mapper(item:str, d:dict) -> str:
                         if "urgency" in d and d["urgency"] == URGENCY_HIGH:
                             return f"[red]{item}[/red]"
                         return f"[cyan]{item}[/cyan]"
 
-                    transformations[f] = Transformation.extract_field(f, default_color="cyan", color_map={URGENCY_HIGH: "red"}, map_func=mapper)
+                    transformations[f] = Transformations.decorate(f, default_color="cyan", color_map={
+                                                                 URGENCY_HIGH: "red"}, map_func=mapper)
                 if f in ["created_at", "last_status_change_at"]:
-                    transformations[f] = Transformation.extract_date(f)
+                    transformations[f] = Transformations.extract_date(f)
                 if f in ["alerts"]:
-                    transformations[f] = Transformation.extract_alerts(f, alert_fields)
-
-            filtered = Filter.do(incs, transformations)
+                    transformations[f] = Transformations.extract_alerts(f, alert_fields)
+            filtered = Transformations.transform(incs, transformations)
         else:
             # raw output, using json format
             filtered = incs
@@ -419,7 +420,7 @@ def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
     svcs = pd.list()
 
     # filtering
-    svcs = Filter.do(svcs, filters=[Filter.inList("status", status.split(","))], preserve=True)
+    svcs = Filters.apply(svcs, [Filters.inList("status", status.split(","))])
 
     # set fields that will be displayed
     if type(fields) is str:
@@ -431,16 +432,16 @@ def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
         transformations = dict()
 
         for f in fields:
-            transformations[f] = Transformation.extract_field(f)
+            transformations[f] = Transformations.extract(f)
             # special cases
             if f == "status":
-                transformations[f] = Transformation.extract_field("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
+                transformations[f] = Transformations.decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
             if f == "url":
-                transformations[f] = Transformation.extract_field("html_url")
+                transformations[f] = Transformations.extract("html_url")
             if f in ["created_at", "updated_at"]:
-                transformations[f] = Transformation.extract_date(f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc )
+                transformations[f] = Transformations.extract_date(f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc )
 
-        filtered = Filter.do(svcs, transformations)
+        filtered = Transformations.transform(svcs, transformations)
     else:
         # raw output, using json format
         filtered = svcs

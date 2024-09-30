@@ -15,7 +15,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 from pdh.filters import Filter
-from pdh.transformations import Transformation
+from pdh import Transformations
+from typing import Any, List
 
 apple = {
     "intfield": 42,
@@ -34,70 +35,69 @@ orange = {
 }
 
 ilist = [apple, kiwi, orange]
-transformations = {"intfield": Transformation.identity("intfield"), "strfield": Transformation.identity("strfield"), "afield": Transformation.identity("afield")}
-
 
 def test_filter_eq():
-    result = Filter.do(ilist, transformations, [Filter.eq("intfield", 23)])
+    result: List[Any] = Filter.apply(ilist, [Filter.eq("intfield", 23)])
     assert len(result) == 1
     assert result[0] == orange
 
 
 def test_filter_lt():
-    result = Filter.do(ilist, transformations, [Filter.lt("intfield", 9)])
+    result = Filter.apply(ilist, [Filter.lt("intfield", 9)])
     assert len(result) == 1
     assert result[0] == kiwi
 
 
 def test_filter_le():
-    result = Filter.do(ilist, transformations, [Filter.le("intfield", 8)])
+    result = Filter.apply(ilist, [Filter.le("intfield", 8)])
     assert len(result) == 1
     assert result[0] == kiwi
 
 
 def test_filter_ge():
-    result = Filter.do(ilist, transformations, [Filter.ge("intfield", 23)])
+    result = Filter.apply(ilist, [Filter.ge("intfield", 23)])
     assert len(result) == 2
     assert result == [apple, orange]
 
 
 def test_filter_gt():
-    result = Filter.do(ilist, transformations, [Filter.gt("intfield", 40)])
+    result = Filter.apply(ilist,  [Filter.gt("intfield", 40)])
     assert len(result) == 1
     assert result[0] == apple
 
 
 def test_filter_inList():
-    result = Filter.do(ilist, transformations, [Filter.inList("strfield", ["kiwi", "orange"])])
+    result = Filter.apply(ilist, [Filter.inList("strfield", ["kiwi", "orange"])])
     assert len(result) == 2
     assert result == [kiwi, orange]
 
 
 def test_filter_instr():
-    result = Filter.do(ilist, transformations, [Filter.inStr("afield", "kiwi")])
+    result = Filter.apply(ilist,  [Filter.inStr("afield", "kiwi")])
     assert len(result) == 1
     assert result[0] == kiwi
 
 
 def test_filter_ieq():
-    result = Filter.do(ilist, transformations, [Filter.ieq("strfield", "APPLE")])
+    result = Filter.apply(ilist, [Filter.ieq("strfield", "APPLE")])
     assert len(result) == 1
     assert result[0] == apple
 
 
 def test_filter_regexp():
-    result = Filter.do(ilist, transformations, [Filter.regexp("afield", "this is .*")])
+    result = Filter.apply(ilist,  [Filter.regexp("afield", "this is .*")])
     assert len(result) == 3
     assert result == ilist
 
 def test_filter_not_regexp():
-    result = Filter.do(ilist, transformations, [Filter.not_regexp("afield", "orange")])
+    result = Filter.apply(ilist, [Filter.not_regexp("afield", "orange")])
     assert len(result) == 2
     assert result == [apple, kiwi]
 
 def test_transformation_extract_field():
-    trans = {"afield": Transformation.extract_field("afield")}
-    result = Filter.do(ilist, trans, [Filter.regexp("afield", "this is .*")])
+    trans = {"afield": Transformations.extract("afield")}
+    il = Transformations.transform(ilist, trans)
+    result = Filter.apply(il, [Filter.regexp("afield", "this is .*")])
     assert len(result) == 3
     assert result == [
         {"afield": "this is apple"},

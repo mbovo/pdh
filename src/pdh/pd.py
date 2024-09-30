@@ -15,7 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import subprocess
-from typing import Dict, Iterator, List
+from typing import Any, Dict, Iterator, List
 from rich import print
 from pdpyras import APISession, PDClientError
 import json
@@ -54,7 +54,7 @@ class PD(object):
 
 
 class Incidents(PD):
-    def list(self, userid: list | None = None, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES) -> List:
+    def list(self, userid: list | None = None, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES) -> List[Any]:
         """List all incidents"""
         params = {"statuses[]": statuses, "urgencies[]": urgencies}
         if userid:
@@ -65,36 +65,36 @@ class Incidents(PD):
         """List all incidents assigned to the configured UserID"""
         return self.list([self.cfg["uid"]], statuses, urgencies)
 
-    def alerts(self, id: str) -> dict:
+    def alerts(self, id: str) -> Dict | List:
         r = self.session.rget(f"/incidents/{id}/alerts")
         return r
 
-    def get(self, id: str) -> dict:
+    def get(self, id: str) -> Dict | List:
         """Retrieve a single incident by ID"""
         r = self.session.rget(f"/incidents/{id}")
         return r
 
-    def ack(self, incs: List) -> None:
+    def ack(self, incs) -> None:
         self.change_status(incs, STATUS_ACK)
 
-    def resolve(self, incs: List) -> None:
+    def resolve(self, incs) -> None:
         self.change_status(incs, STATUS_RESOLVED)
 
-    def change_status(self, incs: List, status: str = STATUS_ACK) -> None:
+    def change_status(self, incs, status: str = STATUS_ACK) -> None:
         for i in incs:
             if "status" in i:
                 i["status"] = status
 
         self.bulk_update(incs)
 
-    def snooze(self, incs: List, duration=14400) -> None:
+    def snooze(self, incs, duration=14400) -> None:
         for i in incs:
             try:
                 self.session.post(f"/incidents/{i['id']}/snooze", json={"duration": duration})
             except Exception as e:
                 print(e)
 
-    def bulk_update(self, incs: List):
+    def bulk_update(self, incs):
         ret = None
         try:
             ret = self.session.rput("incidents", json=incs)
@@ -110,7 +110,7 @@ class Incidents(PD):
             print(e)
         return ret
 
-    def reassign(self, incs: List, uids: List[str]) -> None:
+    def reassign(self, incs, uids: List[str]) -> None:
         for i in incs:
             assignments = [{"assignee": {"id": u, "type": "user_reference"}} for u in uids]
             new_inc = {
@@ -123,14 +123,14 @@ class Incidents(PD):
             except Exception as e:
                 print(str(e))
 
-    def apply(self, incs: List, paths: List[str]) -> List:
+    def apply(self, incs, paths: List[str]) -> List:
         rets = []
         for script in paths:
             output = self.apply_single(incs, script)
             rets.append({"script": script} | output)
         return rets
 
-    def apply_single(self, incs: List, script: str) -> Dict:
+    def apply_single(self, incs, script: str) -> Dict:
         process = subprocess.Popen(script, text=True, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
         stdout, stderr = process.communicate(json.dumps(incs))
         process.wait()

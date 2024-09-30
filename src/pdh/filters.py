@@ -16,7 +16,6 @@
 #
 import re
 from typing import Callable, Iterator, List, Dict, Any
-from dikdik import Dict as DikDik
 
 class Filter(object):
     """
@@ -160,13 +159,13 @@ class Filter(object):
         return f
 
     @staticmethod
-    def eq(field: str, value: str) -> Callable[[dict], bool]:
+    def eq(field: str, value: Any) -> Callable[[dict], bool]:
         """
         Creates a filter function that checks if a specified field in a dictionary equals a given value.
 
         Args:
             field (str): The key in the dictionary to check.
-            value (str): The value to compare against the dictionary's field value.
+            value (Any): The value to compare against the dictionary's field value.
 
         Returns:
             Callable[[dict], bool]: A function that takes a dictionary and returns True if the specified field's value equals the given value, otherwise False.
@@ -223,35 +222,19 @@ class Filter(object):
         return f
 
     @staticmethod
-    def do(objects: List | List[Dict[Any,Any]] | Iterator,
-           transformations: dict|None = None,
-           filters: list = [],
-           preserve : bool = False) -> list:
+    def apply(objects: List[Any] | List[Dict[Any, Any]] | Iterator[Any], filters: List[Callable[[Dict], Any]] = []) -> List[Any] | List[Dict[Any, Any]] | Iterator[Any]:
         """
-        Filters and transforms a collection of objects.
+        Filters a collection of objects.
 
         Args:
             objects (Iterator): An iterator of objects to be filtered and transformed.
             transformations (dict | None, optional): A dictionary where keys are paths and values are functions to transform the objects. Defaults to None.
             filters (list, optional): A list of filter functions to apply to the objects. Defaults to an empty list.
-            preserve (bool, optional): If True, preserves the original fields when apply transformations. If False, applies transformations directly. Defaults to False.
 
         Returns:
-            list: A list of filtered and transformed objects.
+            list: A list of filtered objects (object for which at least one filter function returned True).
         """
-        ret = list()
-        for obj in objects:
-            if transformations is not None:
-                if preserve:
-                    item = obj
-                else:
-                    item = {}
-                for path, func in transformations.items():
-                    # using dikdik.dict.set_path
-                    DikDik.set_path(item, path, func(obj))
-                ret.append(item)
-            else:
-                ret.append(obj)
+        ret = objects
         for filter_func in filters:
             ret = [o for o in filter(filter_func, ret)]
 

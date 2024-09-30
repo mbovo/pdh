@@ -14,148 +14,169 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from typing import Any, Callable
+from typing import Any, Callable, Dict, Iterator, List
 from datetime import datetime, timezone
 from rich.pretty import pretty_repr
-from dikdik.dict import get_path
+from dikdik import Dict as DikDik
 
+"""
+  Extractor module contains functions to extract fields from dictionaries.
+  It's meant to be used with Filter.do() function
+"""
 
-class Transformation(object):
+def extract(path: str, default: str | None = None) -> Callable[[Dict,], Any]:
     """
-    Transformation is a collection of methods to transform dictionaries
+    Creates a function that extracts a value from a dictionary based on a specified field name.
+    If default is not specified, it will raise a KeyError when the field is not found.
+    Args:
+      field_name (str): The name of the field to extract. Can be a nested field in the form of "field.subfield".
+      default    (str): The default value to return if the field is not found. Defaults to None.
+    Returns:
+      Callable[..., Any]: A function that takes a dictionary and returns the value of the specified field.
     """
-    @staticmethod
-    def identity(field_name) -> Callable[..., Any]:
-        def fun(i: dict) -> Any:
-            return i[field_name]
+    return extract_change(path, default=default, change_map=None)
 
-        return fun
 
-    @staticmethod
-    def extract_date(item_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ", tz: timezone | None = None) -> Callable[[dict], str]:
-        def extract(i: dict) -> str:
-            d = datetime.strptime(i[item_name], format)
-            duration = datetime.now(tz) - d
-            data = {}
-            data["d"], remaining = divmod(duration.total_seconds(), 86_400)
-            data["h"], remaining = divmod(remaining, 3_600)
-            data["m"], _ = divmod(remaining, 60)
+def extract_change(path: str, change_map: Dict[str, str] | None = None, default: str|None = None) -> Callable[[Dict,], Any]:
+    """
+    Creates a function that extracts a value from a dictionary based on a specified path and optionally maps it to a new value.
+    Args:
+      path (str): The path to the desired value in the dictionary, using dot notation for nested fields.
+      change_map (Dict[str, str], optional): A dictionary mapping original values to new values. Defaults to None.
+      default (str, optional): A default value to return if the specified path does not exist in the dictionary. Defaults to None.
+    Returns:
+      Callable[[Dict], Any]: A function that takes a dictionary and returns the extracted (and possibly mapped) value.
+    Raises:
+      KeyError: If the specified path does not exist in the dictionary and no default value is provided.
+    """
+    def f(i: dict) -> Any:
+        try:
+            # recursively return inner fields if they exist in the form of "field.subfield"
+            ret = DikDik.get_path(i, path)
+            if change_map and ret in change_map.keys():
+                return change_map[ret]
+            return ret
+        except KeyError as e:
+            if default:
+                return default
+            raise e
 
-            time_parts = [f"{round(value)}{name}" for name, value in data.items() if value > 0]
-            if time_parts:
-                return " ".join(time_parts) + " ago"
-            else:
-                return "less than 1m ago"
+    return f
 
-        return extract
 
-    @staticmethod
-    def extract_field(field_name: str, color_map: dict | None = None, default_color: str | None  = None, change_map: dict | None = None, map_func: Callable[[str,dict],str] | None = None,) -> Callable[[dict],str]:
-        """
-        Returns an extracor function that must be used with Filter.do()
-        Retrieve a specific field by name and optionally apply color and formatting.
-        Optionally accept a map_func function to change the field value with custom logic
+def transform(objects: List[Any] | List[Dict[Any, Any]] | Iterator[Any], transformers: Dict[str,Callable[[Dict], Any]] | None = None, copy: bool = False) -> List[Any] | List[Dict[Any, Any]] | Iterator[Any]:
+    ret = list()
 
-        Parameters:
-        - field_name (str): The name of the field to extract.
-        - color_map (dict, optional): A dictionary mapping field values to color codes for formatting.
-        - default_color (str, optional): A default color code to apply to the field value.
-        - change_map (dict, optional): A dictionary mapping original field values to new values.
-        - map_func (Callable, optional): A function to apply to the field value for further transformation. Function must be in the form of `func(item:str, d: dict) -> str`
+    for obj in objects:
+        if transformers is not None:
+            item = obj if copy else {}
+            for path, func in transformers.items():
+                DikDik.set_path(item,path,func(obj))
+            ret.append(item)
+        else:
+            ret.append(obj)
 
-        Returns:
-        - Callable: A function that takes a dictionary and returns the transformed field value as a string.
-        """
-        def extract(i: dict) -> str:
-            item = get_path(i, field_name)
+    return ret
 
-            if not item:
-                return ""
-            # escape [ and ] to avoid rich formatting clashes
-            if '[' in item or ']' in item:
-                ret = f"{item}".replace("[", "\\[")
-            else:
-                ret = item
 
-            if change_map:
-                # swap the real value with the one in the change_map
-                if item in change_map.keys():
-                    ret = change_map[item]
+def extract_date(field_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ", tz: timezone | None = None) -> Callable[[Dict], str]:
+    """
+    Converts a date string from a dictionary into a human-readable relative time format.
+      - item_name (str): The key in the dictionary containing the date string.
+      - format (str, optional): The format of the date string. Defaults to "%Y-%m-%dT%H:%M:%SZ".
+      - tz (timezone, optional): The timezone to use for the current time. Defaults to None.
+      - Callable[[Dict], Any]: A function that takes a dictionary and returns a human-readable relative time string.
+    """
+    def f(i: dict) -> str:
+      val = DikDik.get_path(i, field_name)
+      duration = datetime.now(tz) - datetime.strptime(val, format)
+      date = {}
+      date["d"], remaining = divmod(duration.total_seconds(), 86_400)
+      date["h"], remaining = divmod(remaining, 3_600)
+      date["m"], date["s"] = divmod(remaining, 60)
 
-            if color_map and item in color_map.keys():
-                ret = f"[{color_map[item]}]{ret}[/{color_map[item]}]"
+      time_parts = [f"{round(value)}{name}" for name,
+                    value in date.items() if value > 0]
+      if time_parts:
+          return " ".join(time_parts) + " ago"
+      else:
+          return f"{date['s']}s ago"
+    return f
 
-            if map_func is not None:
-                # if a map_func is defined, use it to transform the output
-                try:
-                    ret = map_func(item,i)
-                except Exception as e:
-                    print(f"Error in map_func: {e}")
 
-            if default_color:
-                # if a default_color is defined, use it to color the output
-                ret = f"[{default_color}]{ret}[/{default_color}]"
+def decorate(field_name: str, color_map: dict | None = None, default_color: str | None = None, change_map: dict | None = None, map_func: Callable[[str, dict], str] | None = None,) -> Callable[[dict], str]:
+    """
+    Returns a transformator function that must be used with transform()
+    Retrieve a specific field by name and optionally apply color and formatting.
+    Optionally accept a map_func function to change the field value with custom logic
 
-            return f"{ret}"
+    Parameters:
+    - field_name (str): The name of the field to extract.
+    - color_map (dict, optional): A dictionary mapping field values to color codes for formatting.
+    - default_color (str, optional): A default color code to apply to the field value.
+    - change_map (dict, optional): A dictionary mapping original field values to new values.
+    - map_func (Callable, optional): A function to apply to the field value for further transformation. Function must be in the form of `func(item:str, d: dict) -> str`
 
-        return extract
+    Returns:
+    - Callable: A function that takes a dictionary and returns the transformed field value as a string.
+    """
+    def f(i: dict) -> str:
+        item = DikDik.get_path(i, field_name)
 
-    @staticmethod
-    def extract_assignees(color: str = "magenta") -> Callable[[dict], str]:
-        def extract(i: dict) -> str:
-            return f'[{color}]{", ".join([a["assignee"]["summary"] for a in i["assignments"]])}[/{color}]'
+        if not item:
+            return ""
+        # escape [ and ] to avoid rich formatting clashes
+        if '[' in item or ']' in item:
+            ret = f"{item}".replace("[", "\\[")
+        else:
+            ret = item
 
-        return extract
+        if change_map:
+            # swap the real value with the one in the change_map
+            if item in change_map.keys():
+                ret = change_map[item]
 
-    @staticmethod
-    def extract_alerts(field_name, alert_fields: list[str] = ["id", "summary", "created_at", "status"]):
-        from jsonpath_ng import parse
+        if color_map and item in color_map.keys():
+            ret = f"[{color_map[item]}]{ret}[/{color_map[item]}]"
 
-        def extract(i: dict) -> str:
-            alerts = i[field_name]
-            ret = dict()
-            for alert in alerts:
-                alert_obj = dict()
-                for field in alert_fields:
-                    if field not in alert:
-                        expression = parse(field)
-                        alert_obj.update({field: match.value for match in expression.find(alert)})
-                    else:
-                        alert_obj[field] = alert[field]
-
-                ret[alert["id"]] = alert_obj
-            return pretty_repr(ret)
-
-        return extract
-
-    @staticmethod
-    def extract_pending_actions():
-        return lambda i: str([f"{a['type']} at {a['at']}" for a in i["pending_actions"]])
-
-    @staticmethod
-    def extract_users_teams():
-        return lambda x: ",".join([t["summary"] for t in x["teams"]])
-
-    @staticmethod
-    def extract_path(path: str, errStr: str = 'unknown_field') -> Callable[[dict], str]:
-        '''
-            Extract the subfield the field dictionary
-
-            field: the name of the field to extract
-            subfield: the name of the subfield to extract
-
-            given something like
-            alert = {
-                "field": {
-                    "subfield": "value"
-                }
-            }
-            extract_from_dict("alert.field.subfield") will produce "value"
-        '''
-        def extract(i: dict) -> str:
+        if map_func is not None:
+            # if a map_func is defined, use it to transform the output
             try:
-                return get_path(i, path)
-            except KeyError:
-                return errStr
+                ret = map_func(item, i)
+            except Exception as e:
+                print(f"Error in map_func: {e}")
 
-        return extract
+        if default_color:
+            # if a default_color is defined, use it to color the output
+            ret = f"[{default_color}]{ret}[/{default_color}]"
+
+        return f"{ret}"
+
+    return f
+
+
+def extract_assignees(color: str = "magenta") -> Callable[[dict], str]:
+  def f(i: dict) -> str:
+    return f'[{color}]{", ".join([a["assignee"]["summary"] for a in i["assignments"]])}[/{color}]'
+  return f
+
+
+def extract_alerts(field_name, alert_fields: list[str] = ["id", "summary", "created_at", "status"]):
+    def f(i: dict) -> str:
+        alerts = DikDik.get_path(i, field_name)
+        ret = dict()
+        for alert in alerts:
+            alert_obj = dict()
+            for field in alert_fields:
+                DikDik.set_path(alert_obj, field, DikDik.get_path(alert, field))
+
+            ret[alert["id"]] = alert_obj
+        return pretty_repr(ret)
+
+    return f
+
+def extract_pending_actions() :
+    return lambda i: str([f"{a['type']} at {a['at']}" for a in i["pending_actions"]])
+
+def extract_users_teams():
+    return lambda x: ",".join([t["summary"] for t in x["teams"]])
