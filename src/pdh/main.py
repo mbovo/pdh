@@ -274,7 +274,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     if type(alert_fields) is str:
         alert_fields = alert_fields.lower().strip().split(",")
     else:
-        alert_fields = ["status", "created_at", "service.summary", "body.details.Condition", "body.details.Segment", "body.details.Scope"]
+        alert_fields = ["status", "created_at", "service.summary", "body.details"]
 
     if not everything and not userid:
         userid = pd.cfg["uid"]
