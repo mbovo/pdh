@@ -63,7 +63,8 @@ class Output(object):
                     t.add_column(k)
             i = 0
             for u in items:
-                args = [v for k, v in u.items() if k not in skip_columns]
+                args = [repr(v) if isinstance(v, dict) else v for k, v in u.items() if k not in skip_columns]
+
                 if i % 2:
                     t.add_row(*args, style=odd_color)
                 else:

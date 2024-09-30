@@ -267,7 +267,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     if type(fields) is str:
         fields = fields.lower().strip().split(",")
     else:
-        fields = ["id", "assignee", "title", "status", "created_at", "last_status_change_at", "url"]
+        fields = ["id", "assignee", "title", "status", "created_at","service.summary"]
     if alerts:
         fields.append("alerts")
 
@@ -307,6 +307,10 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                     transformations[f] = Transformations.extract_decorate("status", color_map={STATUS_TRIGGERED: "red", STATUS_ACK: "yellow", STATUS_RESOLVED: "green"}, default_color="cyan", change_map={STATUS_TRIGGERED: "✘", STATUS_ACK: "✔", STATUS_RESOLVED: "✔"})
                 if f == "url":
                     transformations[f] = Transformations.extract("html_url")
+                if f == "urgency":
+                    transformations[f] = Transformations.extract_decorate("urgency", color_map={URGENCY_HIGH: "red", URGENCY_LOW: "green"}, change_map={URGENCY_HIGH: "HIGH", URGENCY_LOW: "LOW"})
+                if f == "service.summary":
+                    transformations["service"] = Transformations.extract("service.summary")
                 if f in ["title", "urgency"]:
                     def mapper(item:str, d:dict) -> str:
                         if "urgency" in d and d["urgency"] == URGENCY_HIGH:
