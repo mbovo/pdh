@@ -284,11 +284,11 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
         if service_re:
-            incs = Transformations.transform(incs, {"service": Transformations.extract("service.summary")}, copy=True)
+            incs = Transformations.apply(incs, {"service": Transformations.extract("service.summary")}, preserve=True)
             incs = Filters.apply(incs, [Filters.regexp("service", service_re)])
 
         if excluded_service_re:
-            incs = Transformations.transform(incs, {"service": Transformations.extract("service.summary")}, copy=True)
+            incs = Transformations.apply(incs, {"service": Transformations.extract("service.summary")}, preserve=True)
             incs = Filters.apply(incs, [Filters.not_regexp("service", excluded_service_re)])
 
         if alerts:
@@ -304,7 +304,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                 if f == "assignee":
                     transformations[f] = Transformations.extract_assignees()
                 if f == "status":
-                    transformations[f] = Transformations.decorate("status", color_map={STATUS_TRIGGERED: "red", STATUS_ACK: "yellow", STATUS_RESOLVED: "green"}, default_color="cyan", change_map={STATUS_TRIGGERED: "✘", STATUS_ACK: "✔", STATUS_RESOLVED: "✔"})
+                    transformations[f] = Transformations.extract_decorate("status", color_map={STATUS_TRIGGERED: "red", STATUS_ACK: "yellow", STATUS_RESOLVED: "green"}, default_color="cyan", change_map={STATUS_TRIGGERED: "✘", STATUS_ACK: "✔", STATUS_RESOLVED: "✔"})
                 if f == "url":
                     transformations[f] = Transformations.extract("html_url")
                 if f in ["title", "urgency"]:
@@ -313,13 +313,13 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
                             return f"[red]{item}[/red]"
                         return f"[cyan]{item}[/cyan]"
 
-                    transformations[f] = Transformations.decorate(f, default_color="cyan", color_map={
+                    transformations[f] = Transformations.extract_decorate(f, default_color="cyan", color_map={
                                                                  URGENCY_HIGH: "red"}, map_func=mapper)
                 if f in ["created_at", "last_status_change_at"]:
                     transformations[f] = Transformations.extract_date(f)
                 if f in ["alerts"]:
                     transformations[f] = Transformations.extract_alerts(f, alert_fields)
-            filtered = Transformations.transform(incs, transformations)
+            filtered = Transformations.apply(incs, transformations)
         else:
             # raw output, using json format
             filtered = incs
@@ -435,13 +435,13 @@ def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
             transformations[f] = Transformations.extract(f)
             # special cases
             if f == "status":
-                transformations[f] = Transformations.decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
+                transformations[f] = Transformations.extract_decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
             if f == "url":
                 transformations[f] = Transformations.extract("html_url")
             if f in ["created_at", "updated_at"]:
                 transformations[f] = Transformations.extract_date(f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc )
 
-        filtered = Transformations.transform(svcs, transformations)
+        filtered = Transformations.apply(svcs, transformations)
     else:
         # raw output, using json format
         filtered = svcs

@@ -78,13 +78,13 @@ ilist = [apple, kiwi, orange]
 
 def test_extract_date()-> None:
     t = Transformations.extract_date("bestbefore")
-    result = Transformations.transform(ilist, {"bestbefore": t})
+    result = Transformations.apply(ilist, {"bestbefore": t})
     assert len(result) == 3
 
 
 def test_extract_field() -> None:
     t: dict = {"newfield": Transformations.extract("strfield")}
-    result = Transformations.transform(ilist, t)
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "apple"
     assert result[1]["newfield"] == "kiwi"
@@ -92,7 +92,7 @@ def test_extract_field() -> None:
 
 def test_extract_field_change() -> None:
     t: dict = {"newfield": Transformations.extract_change("strfield", change_map={"apple": "banana"})}
-    result = Transformations.transform(ilist, t)
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "banana"
     assert result[1]["newfield"] == "kiwi"
@@ -101,7 +101,7 @@ def test_extract_field_change() -> None:
 
 def test_extract_path():
     t: dict = {"newfield": Transformations.extract("dictfield.inside", "-x-")}
-    result = Transformations.transform(ilist, t)
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "-x-"
     assert result[1]["newfield"] == "-x-"
@@ -109,7 +109,7 @@ def test_extract_path():
 
 def test_extract_assignees() -> None:
     t: dict = {"newfield": Transformations.extract_assignees("magenta")}
-    result = Transformations.transform(ilist, t)
+    result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "[magenta]Rakhi[/magenta]"
     assert result[1]["newfield"] == "[magenta]Prasanna[/magenta]"

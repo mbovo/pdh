@@ -20,13 +20,45 @@ from rich.pretty import pretty_repr
 from dikdik import Dict as DikDik
 
 """
-  Extractor module contains functions to extract fields from dictionaries.
-  It's meant to be used with Filter.do() function
+  Transformations module contains functions to extract and mutate dictionary fields.
+  Almost all functions here are meant to be used with apply() function
 """
+
+
+def apply(objects: List[Any] | List[Dict[Any, Any]] | Iterator[Any], transformers: Dict[str, Callable[[Dict], Any]] | None = None, preserve: bool = False) -> List[Any] | List[Dict[Any, Any]] | Iterator[Any]:
+    """
+    Apply a set of transformation functions to a list or iterator of objects.
+
+    Args:
+      objects (List[Any] | List[Dict[Any, Any]] | Iterator[Any]):
+        A list or iterator of objects to be transformed.
+      transformers (Dict[str, Callable[[Dict], Any]] | None, optional):
+        A dictionary where keys are paths and values are functions to be applied to the objects.
+        Defaults to None.
+      copy (bool, optional):
+        If True, preserve the original fields if not mutated by a transformations function.
+        Defaults to False.
+
+    Returns:
+      List[Any] | List[Dict[Any, Any]] | Iterator[Any]:
+        A list or iterator of transformed objects.
+    """
+    ret = list()
+
+    for obj in objects:
+        if transformers is not None:
+            item = obj if preserve else {}
+            for path, func in transformers.items():
+                DikDik.set_path(item, path, func(obj))
+            ret.append(item)
+        else:
+            ret.append(obj)
+
+    return ret
 
 def extract(path: str, default: str | None = None) -> Callable[[Dict,], Any]:
     """
-    Creates a function that extracts a value from a dictionary based on a specified field name.
+    Extracts a value from a dictionary based on a specified field path dot separated.
     If default is not specified, it will raise a KeyError when the field is not found.
     Args:
       field_name (str): The name of the field to extract. Can be a nested field in the form of "field.subfield".
@@ -39,7 +71,7 @@ def extract(path: str, default: str | None = None) -> Callable[[Dict,], Any]:
 
 def extract_change(path: str, change_map: Dict[str, str] | None = None, default: str|None = None) -> Callable[[Dict,], Any]:
     """
-    Creates a function that extracts a value from a dictionary based on a specified path and optionally maps it to a new value.
+    Extracts a value from a dictionary based on a specified path and optionally maps it to a new value.
     Args:
       path (str): The path to the desired value in the dictionary, using dot notation for nested fields.
       change_map (Dict[str, str], optional): A dictionary mapping original values to new values. Defaults to None.
@@ -62,21 +94,6 @@ def extract_change(path: str, change_map: Dict[str, str] | None = None, default:
             raise e
 
     return f
-
-
-def transform(objects: List[Any] | List[Dict[Any, Any]] | Iterator[Any], transformers: Dict[str,Callable[[Dict], Any]] | None = None, copy: bool = False) -> List[Any] | List[Dict[Any, Any]] | Iterator[Any]:
-    ret = list()
-
-    for obj in objects:
-        if transformers is not None:
-            item = obj if copy else {}
-            for path, func in transformers.items():
-                DikDik.set_path(item,path,func(obj))
-            ret.append(item)
-        else:
-            ret.append(obj)
-
-    return ret
 
 
 def extract_date(field_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ", tz: timezone | None = None) -> Callable[[Dict], str]:
@@ -104,9 +121,8 @@ def extract_date(field_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ", tz: timezo
     return f
 
 
-def decorate(field_name: str, color_map: dict | None = None, default_color: str | None = None, change_map: dict | None = None, map_func: Callable[[str, dict], str] | None = None,) -> Callable[[dict], str]:
+def extract_decorate(field_name: str, color_map: dict | None = None, default_color: str | None = None, change_map: dict | None = None, map_func: Callable[[str, dict], str] | None = None,) -> Callable[[dict], str]:
     """
-    Returns a transformator function that must be used with transform()
     Retrieve a specific field by name and optionally apply color and formatting.
     Optionally accept a map_func function to change the field value with custom logic
 

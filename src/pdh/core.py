@@ -42,7 +42,7 @@ class PDH(object):
                     t[f] = Transformations.extract(f)
                 if "teams" in fields:
                     t["teams"] = Transformations.extract_users_teams()
-                filtered = Transformations.transform(users, t)
+                filtered = Transformations.apply(users, t)
 
             print_items(filtered, output)
             return True
@@ -73,7 +73,7 @@ class PDH(object):
                     transformations[t] = Transformations.extract(t)
                 transformations["teams"] = Transformations.extract_users_teams()
 
-                filtered = Transformations.transform(users, transformations)
+                filtered = Transformations.apply(users, transformations)
 
             print_items(filtered, output)
             return True

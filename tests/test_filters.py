@@ -96,7 +96,7 @@ def test_filter_not_regexp():
 
 def test_transformation_extract_field():
     trans = {"afield": Transformations.extract("afield")}
-    il = Transformations.transform(ilist, trans)
+    il = Transformations.apply(ilist, trans)
     result = Filter.apply(il, [Filter.regexp("afield", "this is .*")])
     assert len(result) == 3
     assert result == [
