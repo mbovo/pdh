@@ -60,7 +60,7 @@ def version():
     click.echo(f"v{importlib.metadata.version('pdh')}")
 
 
-@main.group(help="Operater on Users")
+@main.group(help="Operator on Users")
 @click.option(
     "-c",
     "--config",
@@ -126,7 +126,7 @@ def user_get(ctx, user, output, fields):
         sys.exit(1)
 
 
-@main.group(help="Operater on Incidents")
+@main.group(help="Operator on Incidents")
 @click.option(
     "-c",
     "--config",
@@ -223,7 +223,7 @@ def apply(ctx, incident, path, output, script):
 @click.option("-r", "--resolve", is_flag=True, default=False, help="Resolve the incident listed here")
 @click.option("-h", "--high", is_flag=True, default=False, help="List only HIGH priority incidents")
 @click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
-@click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
+@click.option("-w", "--watch", is_flag=True, default=False, help="Continuously print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
 @click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
 @click.option("--rules-path", required=False, default="~/.config/pdh_rules", help="Apply all executable find in this path")
@@ -395,7 +395,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         time.sleep(timeout)
         console.clear()
 
-@main.group(help="Operater on Services", name="svc")
+@main.group(help="Operator on Services", name="svc")
 @click.option(
     "-c",
     "--config",
