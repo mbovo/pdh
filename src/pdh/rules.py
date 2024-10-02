@@ -60,11 +60,11 @@ def output(*args):
 
 def exec(cmd: Union[str, list]) -> ShellResponse:
     """
-    Runs any executable in a shell reeturning a ShellResponse(stdout,stderr,rc)
+    Runs any executable in a shell returning a ShellResponse(stdout,stderr,rc)
       Parameters:
         cmd (Union[str,list(str)]): Either a string or a list of strings with the command to run and its arguments
       Returns:
-        ShellResponse: a namedtuple with three fields: stdout,stderr,rc with the relevant informations
+        ShellResponse: a namedtuple with three fields: stdout,stderr,rc with the relevant information
     """
     p = subprocess.Popen(cmd, text=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
@@ -97,9 +97,9 @@ def chain(incs: list, path: str, pd: Incidents | None = None):
 def api(config_file: str = "~/.config/pdh.yaml") -> Incidents:
 
     """
-    Initializate the Pagerduty APIs in a more easy way
+    Initialize the Pagerduty APIs in a more easy way
       Parameters:
-        config_file (str): the file path with pdh configuration (defualt: ~/.config/pdh.yaml)
+        config_file (str): the file path with pdh configuration (default: ~/.config/pdh.yaml)
       Returns:
         Incidents (object): the api object capable of doing things
     """
