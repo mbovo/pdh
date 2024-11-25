@@ -16,6 +16,7 @@
 #
 import yaml
 import json
+import sys
 from rich.table import Table
 from rich.console import Console
 from rich import print as rich_print
@@ -46,8 +47,9 @@ class Output(object):
 
     def json(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
-        console = kwargs["console"] if "console" in kwargs else Console()
-        console.print(json.dumps(items))
+        #console = kwargs["console"] if "console" in kwargs else Console()
+        json.dump(items,sys.stdout)
+        #console.print(json.dumps(items))
 
     def table(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
