@@ -16,7 +16,6 @@
 #
 import yaml
 import json
-import sys
 from rich.table import Table
 from rich.console import Console
 from rich import print as rich_print
@@ -28,7 +27,9 @@ class Output(object):
     def plain(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
         plain_print_f = kwargs["print_f"] if "print_f" in kwargs else None
-        console = kwargs["console"] if "console" in kwargs else Console()
+        console = kwargs["console"] if "console" in kwargs else None
+        if console is None:
+            console = Console()
         for i in items:
             if plain_print_f:
                 plain_print_f(i)
@@ -37,23 +38,30 @@ class Output(object):
 
     def raw(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
-        console = kwargs["console"] if "console" in kwargs else Console()
+        console = kwargs["console"] if "console" in kwargs else None
+        if console is None:
+            console = Console()
         console.print(items)
 
     def yaml(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
-        console = kwargs["console"] if "console" in kwargs else Console()
+        console = kwargs["console"] if "console" in kwargs else None
+        if console is None:
+            console = Console()
         console.print(yaml.safe_dump(items))
 
     def json(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
-        #console = kwargs["console"] if "console" in kwargs else Console()
-        json.dump(items,sys.stdout)
-        #console.print(json.dumps(items))
+        console = kwargs["console"] if "console" in kwargs else None
+        if console is None:
+            console = Console()
+        console.print_json(json.dumps(items))
 
     def table(self, **kwargs) -> None:
         items = kwargs["items"] if "items" in kwargs else []
-        console = kwargs["console"] if "console" in kwargs else Console()
+        console = kwargs["console"] if "console" in kwargs else None
+        if console is None:
+            console = Console()
         skip_columns = kwargs["skip_columns"] if "skip_columns" in kwargs else []
         odd_color = kwargs["odd_color"] if "odd_color" in kwargs else "grey93 on black"
         even_color = kwargs["even_color"] if "even_color" in kwargs else "grey50 on black"
@@ -80,7 +88,7 @@ def print_items(
         output,
         skip_columns: list = [],
         plain_print_f = None,
-        console: Console = Console(),
+        console: Console|None = None,
         odd_color: str = "grey93 on black",
         even_color: str = "grey50 on black"
     ) -> None:

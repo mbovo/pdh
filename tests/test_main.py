@@ -55,7 +55,13 @@ def test_print_items_yaml():
 
 def test_print_items_json():
     items = [{"Title": "text", "Url": "https://localhost"}]
-    expected = '[{"Title": "text", "Url": "https://localhost"}]\n'
+    expected = """[
+  {
+    "Title": "text",
+    "Url": "https://localhost"
+  }
+]
+"""
     console = Console(force_terminal=True, file=io.StringIO(), _environ={}, color_system=None)
     main.print_items(items, output="json", console=console)
     assert console.file.getvalue() == expected
