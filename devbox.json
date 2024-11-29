@@ -8,5 +8,12 @@
     "pre-commit@3.7.1",
     "cachix@1.7.4",
     "statix@latest"
-  ]
+  ],
+  "shell":{
+    "init_hook": [
+            "pre-commit install",
+            "source $VENV_DIR/bin/activate && poetry install",
+            "echo 'source $VENV_DIR/bin/activate' to activate the virtual environment"
+    ]
+  }
 }

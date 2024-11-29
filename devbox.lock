@@ -308,7 +308,7 @@
     },
     "python@3.11.9": {
       "last_modified": "2024-06-12T20:55:33Z",
-      "plugin_version": "0.0.3",
+      "plugin_version": "0.0.4",
       "resolved": "github:NixOS/nixpkgs/a9858885e197f984d92d7fe64e9fff6b2e488d40#python3",
       "source": "devbox-search",
       "version": "3.11.9",
