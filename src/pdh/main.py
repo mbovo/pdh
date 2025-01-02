@@ -45,12 +45,7 @@ def main():
 
 
 @main.command(help="Create default configuration file")
-@click.option(
-    "-c",
-    "--config",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@click.option("-c","--config",default="~/.config/pdh.yaml",help="Configuration file location (default: ~/.config/pdh.yaml)")
 def config(config):
     setup_config(config)
 
@@ -61,13 +56,7 @@ def version():
 
 
 @main.group(help="Operate on Users")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@click.option("-c","--config",envvar="PDH_CONFIG",default="~/.config/pdh.yaml",help="Configuration file location (default: ~/.config/pdh.yaml)")
 @click.pass_context
 def user(ctx, config):
     cfg = load_and_validate(config)
@@ -77,24 +66,8 @@ def user(ctx, config):
 
 @user.command(help="List users", name="ls")
 @click.pass_context
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
-@click.option(
-    "-f",
-    "--fields",
-    "fields",
-    help="Filter fields",
-    required=False,
-    type=str,
-    default=None,
-)
+@click.option("-o","--output","output",help="output format",required=False,type=click.Choice(VALID_OUTPUTS),default="table")
+@click.option("-f","--fields","fields",help="Filter fields",required=False,type=str,default=None,)
 def user_list(ctx, output, fields):
     if not PDH.list_user(ctx.obj, output, fields):
         sys.exit(1)
@@ -103,37 +76,15 @@ def user_list(ctx, output, fields):
 @user.command(help="Retrieve an user by name or ID", name="get")
 @click.pass_context
 @click.argument("user")
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
-@click.option(
-    "-f",
-    "--fields",
-    "fields",
-    help="Filter fields",
-    required=False,
-    type=str,
-    default=None,
-)
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table",)
+@click.option( "-f", "--fields", "fields", help="Filter fields", required=False, type=str, default=None)
 def user_get(ctx, user, output, fields):
     if not PDH.get_user(ctx.obj, user, output, fields):
         sys.exit(1)
 
 
 @main.group(help="Operate on Incidents")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)")
 @click.pass_context
 def inc(ctx, config):
     cfg = load_and_validate(config)
@@ -176,15 +127,7 @@ def reassign(ctx, incident, user):
 @click.option("-p", "--path", required=False, default=None, help="Subdirectory with scripts to run")
 @click.option("-s", "--script", required=False, default=None, multiple=True, help="Single script to run")
 @click.argument("incident", nargs=-1)
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
+@click.option( "-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
 def apply(ctx, incident, path, output, script):
     pd = PagerDuty(ctx.obj)
     incs = pd.incidents.list()
@@ -404,13 +347,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         console.clear()
 
 @main.group(help="Operate on Services", name="svc")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)" )
 @click.pass_context
 def svc(ctx, config):
     cfg = load_and_validate(config)
@@ -483,13 +420,7 @@ def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
 
 
 @main.group(help="Operate on Teams", name="teams")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)", )
 @click.pass_context
 def teams(ctx, config):
     cfg = load_and_validate(config)
