@@ -23,9 +23,10 @@ import time
 from rich import print
 from rich.console import Console
 from datetime import timezone
+from typing import Dict
 from .core import PDH
 
-from .pd import Services, Users, Incidents
+from .pd import PagerDuty, Services, Users, Incidents
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
@@ -35,7 +36,7 @@ from .pd import (
     DEFAULT_URGENCIES,
 )
 from . import Filters, Transformations
-from .config import load_and_validate, setup_config
+from .config import Config, load_and_validate, setup_config
 from .output import print_items, VALID_OUTPUTS
 
 
@@ -236,7 +237,8 @@ def apply(ctx, incident, path, output, script):
 @click.option("--excluded-service-re", "excluded_service_re", required=False, help="Exclude incident of these services (regexp)", default=None)
 @click.option("--sort", "sort_by", required=False, help="Sort by field name", default=None)
 @click.option("--reverse", "reverse_sort", required=False, help="Reverse the sort", is_flag=True, default=False)
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort):
+@click.option("-T", "--teams", "teams", required=False, help="Filter only incidents assigned to this team IDs", default=None)
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort, teams):
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -276,10 +278,16 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     else:
         alert_fields = ["status", "created_at", "service.summary", "body.details"]
 
+    if type(teams) is str:
+        if teams == "mine":
+            teams = [ t["id"] for t in Users(ctx.obj).me()["teams"] ]
+        else:
+            teams = teams.lower().strip().split(",")
+
     if not everything and not userid:
         userid = pd.cfg["uid"]
     while True:
-        incs = pd.list(userid, statuses=status, urgencies=urgencies)
+        incs = pd.list(userid, statuses=status, urgencies=urgencies, teams=teams)
 
         incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
@@ -470,5 +478,54 @@ def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
             print(f"[red]Invalid sort field: {sort_by}[/red]")
             print(f"[yellow]Available fields: {', '.join(fields)}[/yellow]")
             sys.exit(-2)
+
+    print_items(filtered, output, plain_print_f=plain_print_f)
+
+
+@main.group(help="Operate on Teams", name="teams")
+@click.option(
+    "-c",
+    "--config",
+    envvar="PDH_CONFIG",
+    default="~/.config/pdh.yaml",
+    help="Configuration file location (default: ~/.config/pdh.yaml)",
+)
+@click.pass_context
+def teams(ctx, config):
+    cfg = load_and_validate(config)
+    ctx.ensure_object(dict)
+    ctx.obj = cfg
+
+
+@teams.command(help="List teams where current user belongs", name="mine")
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
+@click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
+@click.pass_context
+def teams_mine(ctx, output, fields):
+    cfg: Config = ctx.obj
+    pd = PagerDuty(cfg)
+
+    teams: Dict = pd.me()['teams']
+
+    # set fields that will be displayed
+    if type(fields) is str:
+        fields = fields.lower().strip().split(",")
+    else:
+        fields = ["id", "summary", "html_url"]
+    def plain_print_f(i):
+        s = ""
+        for f in fields:
+            s += f"{i[f]}\t"
+        print(s)
+
+    if output != "raw":
+        transformations = dict()
+
+        for f in fields:
+            transformations[f] = Transformations.extract(f)
+
+        filtered = Transformations.apply(teams, transformations)
+    else:
+        filtered = teams
 
     print_items(filtered, output, plain_print_f=plain_print_f)

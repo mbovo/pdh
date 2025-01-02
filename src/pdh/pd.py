@@ -37,7 +37,7 @@ DEFAULT_STATUSES = [STATUS_TRIGGERED, STATUS_ACK]
 DEFAULT_URGENCIES = [URGENCY_HIGH, URGENCY_LOW]
 
 
-class PD(object):
+class PagerDuty(object):
 
     def __init__(self, cfg: Config) -> None:
         super().__init__()
@@ -45,20 +45,26 @@ class PD(object):
         self.cfg: Config = cfg
         self.session: APISession = APISession(cfg["apikey"], default_from=cfg["email"])
         self.session.max_network_attempts = 5
-        self.users: list = list()
-        self.incs: list = list()
+        self.__users: list = list()
+        self.__incs: list = list()
         try:
-            self.session.get("/users/me")
+            self.__me = self.session.rget("/users/me")
         except PDClientError as e:
             raise UnauthorizedException(str(e))
 
+    def me(self) -> Dict:
+        """Retrieve the user information for the configured API key"""
+        return self.__me
 
-class Incidents(PD):
-    def list(self, userid: list | None = None, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES) -> List[Any]:
+
+class Incidents(PagerDuty):
+    def list(self, userid: list | None = None, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES, teams=None) -> List[Any]:
         """List all incidents"""
         params = {"statuses[]": statuses, "urgencies[]": urgencies}
         if userid:
             params["user_ids[]"] = userid
+        if teams:
+            params["team_ids[]"] = teams
         return self.session.list_all("incidents", params=params)
 
     def mine(self, statuses: List = DEFAULT_STATUSES, urgencies: List = DEFAULT_URGENCIES) -> List:
@@ -147,7 +153,7 @@ class Incidents(PD):
         return output
 
 
-class Users(PD):
+class Users(PagerDuty):
     def list(self) -> List[Dict] | Iterator[Dict]:
         """List all users in PagerDuty account"""
         users = self.session.iter_all("users")
@@ -181,7 +187,22 @@ class Users(PD):
         """Retrieve all usersIDs matching the given (partial) name"""
         return self.userIDs(query, "name")
 
-class Services(PD):
+    def teams(self, name: str) -> List[Dict]:
+        """Retrieve all teams for a given user"""
+        users = self.search(query=name)
+        teams = []
+        for user in users:
+            teams.append(user["teams"])
+        return teams
+
+    def teamIDs(self, name: str) -> List[str]:
+        """Retrieve all teamIDs for a given user"""
+        teams = self.teams(name)
+        teamIDs = [team["id"] for team in teams]
+        return teamIDs
+
+
+class Services(PagerDuty):
     def list(self,params: dict | None = None) -> List[Dict] | Iterator[Dict]:
         """List all services in PagerDuty account"""
         if params:
