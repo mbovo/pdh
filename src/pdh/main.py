@@ -1,6 +1,6 @@
 #
 # This file is part of the pdh (https://github.com/mbovo/pdh).
-# Copyright (c) 2020-2024 Manuel Bovo.
+# Copyright (c) 2020-2025 Manuel Bovo.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,9 @@ import os
 import time
 from rich import print
 from rich.console import Console
-from datetime import timezone
 from .core import PDH
 
-from .pd import Services, Users, Incidents
+from .pd import PagerDuty
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
@@ -45,12 +44,7 @@ def main():
 
 
 @main.command(help="Create default configuration file")
-@click.option(
-    "-c",
-    "--config",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@click.option("-c","--config",default="~/.config/pdh.yaml",help="Configuration file location (default: ~/.config/pdh.yaml)")
 def config(config):
     setup_config(config)
 
@@ -60,14 +54,8 @@ def version():
     click.echo(f"v{importlib.metadata.version('pdh')}")
 
 
-@main.group(help="Operater on Users")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@main.group(help="Operate on Users")
+@click.option("-c","--config",envvar="PDH_CONFIG",default="~/.config/pdh.yaml",help="Configuration file location (default: ~/.config/pdh.yaml)")
 @click.pass_context
 def user(ctx, config):
     cfg = load_and_validate(config)
@@ -77,24 +65,8 @@ def user(ctx, config):
 
 @user.command(help="List users", name="ls")
 @click.pass_context
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
-@click.option(
-    "-f",
-    "--fields",
-    "fields",
-    help="Filter fields",
-    required=False,
-    type=str,
-    default=None,
-)
+@click.option("-o","--output","output",help="output format",required=False,type=click.Choice(VALID_OUTPUTS),default="table")
+@click.option("-f","--fields","fields",help="Filter fields",required=False,type=str,default=None,)
 def user_list(ctx, output, fields):
     if not PDH.list_user(ctx.obj, output, fields):
         sys.exit(1)
@@ -103,37 +75,15 @@ def user_list(ctx, output, fields):
 @user.command(help="Retrieve an user by name or ID", name="get")
 @click.pass_context
 @click.argument("user")
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
-@click.option(
-    "-f",
-    "--fields",
-    "fields",
-    help="Filter fields",
-    required=False,
-    type=str,
-    default=None,
-)
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table",)
+@click.option( "-f", "--fields", "fields", help="Filter fields", required=False, type=str, default=None)
 def user_get(ctx, user, output, fields):
     if not PDH.get_user(ctx.obj, user, output, fields):
         sys.exit(1)
 
 
-@main.group(help="Operater on Incidents")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@main.group(help="Operate on Incidents")
+@click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)")
 @click.pass_context
 def inc(ctx, config):
     cfg = load_and_validate(config)
@@ -176,18 +126,10 @@ def reassign(ctx, incident, user):
 @click.option("-p", "--path", required=False, default=None, help="Subdirectory with scripts to run")
 @click.option("-s", "--script", required=False, default=None, multiple=True, help="Single script to run")
 @click.argument("incident", nargs=-1)
-@click.option(
-    "-o",
-    "--output",
-    "output",
-    help="output format",
-    required=False,
-    type=click.Choice(VALID_OUTPUTS),
-    default="table",
-)
+@click.option( "-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
 def apply(ctx, incident, path, output, script):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
+    pd = PagerDuty(ctx.obj)
+    incs = pd.incidents.list()
     if incident:
         incs = Filters.apply(incs, [Filters.inList("id", incident)])
 
@@ -199,7 +141,7 @@ def apply(ctx, incident, path, output, script):
         for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
             scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
 
-    ret = pd.apply(incs, scripts)
+    ret = pd.incidents.apply(incs, scripts)
     for rule in ret:
         print("[green]Applied rule:[/green]", rule["script"])
         if "error" in rule:
@@ -223,7 +165,7 @@ def apply(ctx, incident, path, output, script):
 @click.option("-r", "--resolve", is_flag=True, default=False, help="Resolve the incident listed here")
 @click.option("-h", "--high", is_flag=True, default=False, help="List only HIGH priority incidents")
 @click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
-@click.option("-w", "--watch", is_flag=True, default=False, help="Continuosly print the list")
+@click.option("-w", "--watch", is_flag=True, default=False, help="Continuously print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
 @click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
 @click.option("--rules-path", required=False, default="~/.config/pdh_rules", help="Apply all executable find in this path")
@@ -236,7 +178,10 @@ def apply(ctx, incident, path, output, script):
 @click.option("--excluded-service-re", "excluded_service_re", required=False, help="Exclude incident of these services (regexp)", default=None)
 @click.option("--sort", "sort_by", required=False, help="Sort by field name", default=None)
 @click.option("--reverse", "reverse_sort", required=False, help="Reverse the sort", is_flag=True, default=False)
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort):
+@click.option("-T", "--teams", "teams", required=False, help="Filter only incidents assigned to this team IDs", default=None)
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort, teams):
+
+    pd = PagerDuty(ctx.obj)
 
     # Prepare defaults
     status = [STATUS_TRIGGERED]
@@ -249,7 +194,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         status.append(STATUS_ACK)
     userid = None
     if user:
-        userid = Users(ctx.obj).userID_by_name(user)
+        userid = pd.users.id(query=user, key="name")
 
     filter_re = None
     try:
@@ -259,7 +204,6 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         sys.exit(-2)
 
     incs = []
-    pd = Incidents(ctx.obj)
     console = Console()
     # fallback to configured userid
 
@@ -276,10 +220,16 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     else:
         alert_fields = ["status", "created_at", "service.summary", "body.details"]
 
+    if type(teams) is str:
+        if teams == "mine":
+            teams = [ t["id"] for t in dict(pd.me())["teams"] ]
+        else:
+            teams = teams.lower().strip().split(",")
+
     if not everything and not userid:
         userid = pd.cfg["uid"]
     while True:
-        incs = pd.list(userid, statuses=status, urgencies=urgencies)
+        incs = pd.incidents.list(userid, statuses=status, urgencies=urgencies, teams=teams)
 
         incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
@@ -293,7 +243,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
         if alerts:
             for i in incs:
-                i["alerts"] = pd.alerts(i["id"])
+                i["alerts"] = pd.incidents.alerts(i["id"])
 
         # Build filtered list for output
         if output != "raw":
@@ -354,17 +304,17 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         # now apply actions like snooze, resolve, ack...
         ids = [i["id"] for i in incs]
         if ack:
-            pd.ack(incs)
+            pd.incidents.ack(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Marked {i} as [yellow]ACK[/yellow]")
         if snooze:
-            pd.snooze(incs)
+            pd.incidents.snooze(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Snoozing incident {i} for 4h")
         if resolve:
-            pd.resolve(incs)
+            pd.incidents.resolve(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Mark {i} as [green]RESOLVED[/green]")
@@ -379,7 +329,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
             if len(scripts) == 0:
                 print(f"[yellow]No rules found in {ppath}[/yellow]")
-            ret = pd.apply(incs, scripts)
+            ret = pd.incidents.apply(incs, scripts)
             for rule in ret:
                 print("[green]Applied rule:[/green]", rule["script"])
                 if "error" in rule:
@@ -395,14 +345,8 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         time.sleep(timeout)
         console.clear()
 
-@main.group(help="Operater on Services", name="svc")
-@click.option(
-    "-c",
-    "--config",
-    envvar="PDH_CONFIG",
-    default="~/.config/pdh.yaml",
-    help="Configuration file location (default: ~/.config/pdh.yaml)",
-)
+@main.group(help="Operate on Services", name="svc")
+@click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)" )
 @click.pass_context
 def svc(ctx, config):
     cfg = load_and_validate(config)
@@ -418,57 +362,32 @@ def svc(ctx, config):
 @click.option("-s", "--status", "status", required=False, help="Filter for service status", default="active,warning,critical")
 @click.pass_context
 def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
-    svcs = []
-    pd = Services(ctx.obj)
+    if not PDH.list_services(ctx.obj, output, fields, sort_by, reverse_sort, status):
+        sys.exit(1)
 
-    svcs = pd.list()
-
-    # filtering
-    svcs = Filters.apply(svcs, [Filters.inList("status", status.split(","))])
-
-    # set fields that will be displayed
-    if type(fields) is str:
-        fields = fields.lower().strip().split(",")
-    else:
-        fields = ["id", "name", "description", "status","created_at", "updated_at", "html_url"]
-
-    if output != "raw":
-        transformations = dict()
-
-        for f in fields:
-            transformations[f] = Transformations.extract(f)
-            # special cases
-            if f == "status":
-                transformations[f] = Transformations.extract_decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
-            if f == "url":
-                transformations[f] = Transformations.extract("html_url")
-            if f in ["created_at", "updated_at"]:
-                transformations[f] = Transformations.extract_date(f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc )
-
-        filtered = Transformations.apply(svcs, transformations)
-    else:
-        # raw output, using json format
-        filtered = svcs
-
-        # define here how print in "plain" way (ie if output=plain)
-    def plain_print_f(i):
-        s = ""
-        for f in fields:
-            s += f"{i[f]}\t"
-        print(s)
+@main.group(help="Operate on Teams", name="teams")
+@click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)", )
+@click.pass_context
+def teams(ctx, config):
+    cfg = load_and_validate(config)
+    ctx.ensure_object(dict)
+    ctx.obj = cfg
 
 
-    if sort_by:
-        try:
-            sort_fields: str|list[str] = sort_by.split(",")  if ',' in sort_by else sort_by
+@teams.command(help="List teams where current user belongs", name="mine")
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
+@click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
+@click.pass_context
+def teams_mine(ctx, output, fields) -> None:
+    if not PDH.list_teams(ctx.obj, mine=True, output=output, fields=fields):
+        sys.exit(1)
 
-            if isinstance(sort_fields, list) and len(sort_fields) > 1:
-                filtered = sorted(filtered, key=lambda x: [x[k] for k in sort_fields], reverse=reverse_sort)
-            else:
-                filtered = sorted(filtered, key=lambda x: x[sort_fields], reverse=reverse_sort)
-        except KeyError:
-            print(f"[red]Invalid sort field: {sort_by}[/red]")
-            print(f"[yellow]Available fields: {', '.join(fields)}[/yellow]")
-            sys.exit(-2)
 
-    print_items(filtered, output, plain_print_f=plain_print_f)
+
+@teams.command(help="List teams in a pagerduty account", name="ls")
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
+@click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
+@click.pass_context
+def teams_list(ctx, output, fields) -> None:
+    if not PDH.list_teams(ctx.obj, mine=False, output=output, fields=fields):
+        sys.exit(1)

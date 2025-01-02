@@ -99,6 +99,26 @@ Any other incident currently outstanding:
 pdh inc ls -e
 ```
 
+#### Listing incident by team
+
+Listing only outstanding alerts only if they are assigned to a specific team:
+
+```bash
+pdh inc ls -e --teams mine
+```
+
+Search for a given team id:
+
+```bash
+pdh teams ls
+```
+
+Use specific id (list):
+
+```bash
+pdh inc ls -e --team-id "P1LONJG,P4SEF5R"
+```
+
 ### Sorting incident by field
 
 ```bash
@@ -129,7 +149,7 @@ pdh inc ls --watch --new --ack --timeout 10
 
 ### List all HIGH priority incidents periodically
 
-List incidents asssigned to all users every 5s
+List incidents assigned to all users every 5s
 
 ```bash
 pdh inc ls --high --everything --watch --timeout 5
@@ -172,7 +192,7 @@ pdh inc ls -e -o raw
 pdh inc apply INCID001 -s /path/to/my/script.py -s /path/to/binary
 ```
 
-The `apply` subcommand will call the listed executable/script passing along a json to stdin with the incident informations. The called script can apply any type of checks/sideffects and output another json to stout to answer the call.
+The `apply` subcommand will call the listed executable/script passing along a json to stdin with the incident information. The called script can apply any type of checks/sideffects and output another json to stout to answer the call.
 
 Even though rules can be written in any language it's very straightforward using python:
 
@@ -204,7 +224,7 @@ This is the simplest rule you can write, reading the input and simply output a n
 └────────┴────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The default output is `table` with one line for each script runned and with one column per each element in the returned object
+The default output is `table` with one line for each script run and with one column per each element in the returned object
 
 ### Rules: more examples
 

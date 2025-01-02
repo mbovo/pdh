@@ -1,7 +1,7 @@
 
 #
 # This file is part of the pdh (https://github.com/mbovo/pdh).
-# Copyright (c) 2020-2024 Manuel Bovo.
+# Copyright (c) 2020-2025 Manuel Bovo.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ def mock_config():
 
 @pytest.fixture
 def mock_users():
-    with patch('pdh.core.Users') as mock:
+    with patch('pdh.core.PagerDuty') as mock:
         yield mock
 
 def test_list_user_default_fields(mock_config, mock_users):

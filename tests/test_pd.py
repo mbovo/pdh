@@ -1,6 +1,6 @@
 #
 # This file is part of the pdh (https://github.com/mbovo/pdh).
-# Copyright (c) 2020-2024 Manuel Bovo.
+# Copyright (c) 2020-2025 Manuel Bovo.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ class FakePD(object):
         loaded = []
         ret = []
         if "users" in argv[0]:
-            uid = argv[0].replace("/users/")
+            uid = argv[0].replace("/users/", "")
             with open("tests/users_list.json", "r") as f:
                 loaded = json.load(f)
                 for u in loaded:
@@ -113,7 +113,7 @@ def incidents(mocker: MockerFixture, config: Config) -> pd.Incidents:
     mocker.patch("pdpyras.APISession.rput", side_effect=FakePD.rput)
     mocker.patch("pdpyras.APISession.get", side_effect=FakePD.get)
     mocker.patch("pdpyras.APISession.post", side_effect=FakePD.post)
-    return pd.Incidents(config)
+    return pd.PagerDuty(config).incidents
 
 
 @pytest.fixture
@@ -124,7 +124,7 @@ def users(mocker: MockerFixture, config: Config) -> pd.Users:
     mocker.patch("pdpyras.APISession.rput", side_effect=FakePD.rput)
     mocker.patch("pdpyras.APISession.get", side_effect=FakePD.get)
     mocker.patch("pdpyras.APISession.post", side_effect=FakePD.post)
-    return pd.Users(config)
+    return pd.PagerDuty(config).users
 
 
 def test_list_incidents(incidents: pd.Incidents, config: Dict):
