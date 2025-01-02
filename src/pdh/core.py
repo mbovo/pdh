@@ -16,7 +16,7 @@
 #
 from pdh import Transformations
 from .filters import Filter
-from .pd import UnauthorizedException, Users, Incidents
+from .pd import PagerDuty, UnauthorizedException
 from .config import Config
 from .output import print, print_items
 
@@ -32,7 +32,7 @@ class PDH(object):
             if isinstance(fields, str):
                 fields = fields.split(",")
 
-            users = Users(cfg).list()
+            users = PagerDuty(cfg).users.list()
 
             if output == "raw":
                 filtered = users
@@ -53,7 +53,7 @@ class PDH(object):
     @staticmethod
     def get_user(cfg: Config, user: str, output: str, fields: list | None = None):
         try:
-            u = Users(cfg)
+            u = PagerDuty(cfg).users
             users = u.search(user)
             if len(users) == 0:
                 users = u.search(user, "id")
@@ -83,45 +83,45 @@ class PDH(object):
 
     @staticmethod
     def ack(cfg: Config, incIDs: list = []) -> None:
-        pd = Incidents(cfg)
-        incs = pd.list()
+        pd = PagerDuty(cfg)
+        incs = pd.incidents.list()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for i in incs:
             print(f"[yellow]✔[/yellow] {i['id']} [grey50]{i['title']}[/grey50]")
-        pd.ack(incs)
+        pd.incidents.ack(incs)
 
     @staticmethod
     def resolve(cfg: Config, incIDs: list = []) -> None:
-        pd = Incidents(cfg)
-        incs = pd.list()
+        pd = PagerDuty(cfg)
+        incs = pd.incidents.list()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for i in incs:
             print(f"[green]✅[/green] {i['id']} [grey50]{i['title']}[/grey50]")
-        pd.resolve(incs)
+        pd.incidents.resolve(incs)
 
     @staticmethod
     def snooze(cfg: Config, incIDs: list = [], duration: int = 14400) -> None:
-        pd = Incidents(cfg)
+        pd = PagerDuty(cfg)
         import datetime
 
-        incs = pd.list()
+        incs = pd.incidents.list()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for id in incIDs:
             print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
 
-        pd.snooze(incs, duration)
+        pd.incidents.snooze(incs, duration)
 
     @staticmethod
     def reassign(cfg: Config, incIDs: list = [], user: str | None = None):
-        pd = Incidents(cfg)
-        incs = pd.list()
+        pd = PagerDuty(cfg)
+        incs = pd.incidents.list()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
 
-        users = Users(cfg).id_by_name(user)
+        users = pd.users.id(user)
         if users is None or len(users) == 0:
-            users = Users(cfg).id_by_name(user)
+            users = pd.users.id(user)
 
         for id in incIDs:
             print(f"Reassign incident {id} to {users}")
 
-        pd.reassign(incs, users)
+        pd.incidents.reassign(incs, users)

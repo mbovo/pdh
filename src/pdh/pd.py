@@ -51,6 +51,7 @@ class PagerDuty(object):
         self.users = Users(self.cfg,self.session)
         self.services = Services(self.cfg, self.session)
         self.incidents = Incidents(self.cfg, self.session)
+        self.teams = Teams(self.cfg, self.session)
         try:
             self.__me: List | Dict = self.session.rget("/users/me")
         except PDClientError as e:
@@ -251,3 +252,39 @@ class Services(object):
         services = self.search(query, key)
         serviceIDs = [u["id"] for u in services]
         return serviceIDs
+
+
+class Teams(object):
+
+    def __init__(self, cfg: Config, session: APISession) -> None:
+        self.cfg = cfg
+        self.session = session
+
+    @lru_cache()
+    def list(self, ttl=ttl_hash()) -> List[Dict] | Iterator[Dict]:
+        """List all teams in PagerDuty account"""
+        users = self.session.iter_all("teams")
+
+        return users
+
+    @lru_cache()
+    def get(self, id: str, ttl=ttl_hash()) -> Dict | List:
+        """Get a single team by ID"""
+        return self.session.rget(f"/teams/{id}")
+
+    @lru_cache()
+    def search(self, query: str, key: str = "name", ttl=ttl_hash()) -> List[dict]:
+        """Retrieve all teams matching query on the attribute name"""
+
+        def equiv(s) -> bool:
+            return query.lower() in s[key].lower()
+
+        teams = [u for u in filter(equiv, self.session.iter_all("teams"))]
+        return teams
+
+    @lru_cache()
+    def id(self, query: str, key: str = "name", ttl=ttl_hash()) -> List[str]:
+        """Retrieve all teams id matching query on the attribute name"""
+        teams = self.search(query, key)
+        teamids = [u["id"] for u in teams]
+        return teamids

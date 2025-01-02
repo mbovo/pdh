@@ -501,7 +501,7 @@ def teams(ctx, config):
 @click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
 @click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
 @click.pass_context
-def teams_mine(ctx, output, fields):
+def teams_mine(ctx, output, fields) -> None:
     cfg: Config = ctx.obj
     pd = PagerDuty(cfg)
 
@@ -512,6 +512,40 @@ def teams_mine(ctx, output, fields):
         fields = fields.lower().strip().split(",")
     else:
         fields = ["id", "summary", "html_url"]
+    def plain_print_f(i):
+        s = ""
+        for f in fields:
+            s += f"{i[f]}\t"
+        print(s)
+
+    if output != "raw":
+        transformations = dict()
+
+        for f in fields:
+            transformations[f] = Transformations.extract(f)
+
+        filtered = Transformations.apply(teams, transformations)
+    else:
+        filtered = teams
+
+    print_items(filtered, output, plain_print_f=plain_print_f)
+
+
+@teams.command(help="List teams in a pagerduty account", name="ls")
+@click.option("-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
+@click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
+@click.pass_context
+def teams_list(ctx, output, fields) -> None:
+    cfg: Config = ctx.obj
+    pd = PagerDuty(cfg)
+
+    teams = pd.teams.list()
+
+    if type(fields) is str:
+        fields = fields.lower().strip().split(",")
+    else:
+        fields = ["id", "summary", "html_url"]
+
     def plain_print_f(i):
         s = ""
         for f in fields:
