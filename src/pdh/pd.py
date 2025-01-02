@@ -20,7 +20,8 @@ from rich import print
 from pdpyras import APISession, PDClientError
 import json
 from .config import Config
-
+from functools import lru_cache
+import time
 
 class UnauthorizedException(Exception):
     def __init__(self, *args: object) -> None:
@@ -36,6 +37,8 @@ STATUS_RESOLVED = "resolved"
 DEFAULT_STATUSES = [STATUS_TRIGGERED, STATUS_ACK]
 DEFAULT_URGENCIES = [URGENCY_HIGH, URGENCY_LOW]
 
+def ttl_hash(seconds=30):
+    return round(time.time() / seconds)
 
 class PagerDuty(object):
 
@@ -45,19 +48,25 @@ class PagerDuty(object):
         self.cfg: Config = cfg
         self.session: APISession = APISession(cfg["apikey"], default_from=cfg["email"])
         self.session.max_network_attempts = 5
-        self.__users: list = list()
-        self.__incs: list = list()
+        self.users = Users(self.cfg,self.session)
+        self.services = Services(self.cfg, self.session)
+        self.incidents = Incidents(self.cfg, self.session)
         try:
-            self.__me = self.session.rget("/users/me")
+            self.__me: List | Dict = self.session.rget("/users/me")
         except PDClientError as e:
             raise UnauthorizedException(str(e))
 
-    def me(self) -> Dict:
+    def me(self) -> List[Any] | Dict[Any, Any]:
         """Retrieve the user information for the configured API key"""
         return self.__me
 
 
-class Incidents(PagerDuty):
+class Incidents(object):
+
+    def __init__(self, cfg: Config, session: APISession) -> None:
+        self.cfg = cfg
+        self.session = session
+
     def list(self, userid: list | None = None, statuses: list = DEFAULT_STATUSES, urgencies: list = DEFAULT_URGENCIES, teams=None) -> List[Any]:
         """List all incidents"""
         params = {"statuses[]": statuses, "urgencies[]": urgencies}
@@ -153,18 +162,26 @@ class Incidents(PagerDuty):
         return output
 
 
-class Users(PagerDuty):
-    def list(self) -> List[Dict] | Iterator[Dict]:
+class Users(object):
+
+    def __init__(self, cfg: Config, session: APISession) -> None:
+        self.cfg = cfg
+        self.session = session
+
+    @lru_cache()
+    def list(self, ttl=ttl_hash()) -> List[Dict] | Iterator[Dict]:
         """List all users in PagerDuty account"""
         users = self.session.iter_all("users")
 
         return users
 
-    def get(self, id: str) -> Dict | List:
+    @lru_cache()
+    def get(self, id: str, ttl=ttl_hash()) -> Dict | List:
         """Get a single user by ID"""
         return self.session.rget(f"/users/{id}")
 
-    def search(self, query: str, key: str = "name") -> List[dict]:
+    @lru_cache()
+    def search(self, query: str, key: str = "name", ttl=ttl_hash()) -> List[dict]:
         """Retrieve all users matching query on the attribute name"""
 
         def equiv(s) -> bool:
@@ -173,21 +190,20 @@ class Users(PagerDuty):
         users = [u for u in filter(equiv, self.session.iter_all("users"))]
         return users
 
-    def userIDs(self, query: str, key: str = "name") -> List[str]:
+    @lru_cache()
+    def id(self, query: str, key: str = "name", ttl=ttl_hash()) -> List[str]:
         """Retrieve all userIDs matching query on the attribute name"""
         users = self.search(query, key)
         userIDs = [u["id"] for u in users]
         return userIDs
 
-    def userID_by_mail(self, query):
+    @lru_cache()
+    def id_by_email(self, query, ttl=ttl_hash()):
         """Retrieve all usersIDs matching the given (partial) email"""
-        return self.userIDs(query, "email")
+        return self.id(query, "email")
 
-    def userID_by_name(self, query):
-        """Retrieve all usersIDs matching the given (partial) name"""
-        return self.userIDs(query, "name")
-
-    def teams(self, name: str) -> List[Dict]:
+    @lru_cache()
+    def teams(self, name: str, ttl=ttl_hash()) -> List[Dict]:
         """Retrieve all teams for a given user"""
         users = self.search(query=name)
         teams = []
@@ -195,14 +211,20 @@ class Users(PagerDuty):
             teams.append(user["teams"])
         return teams
 
-    def teamIDs(self, name: str) -> List[str]:
-        """Retrieve all teamIDs for a given user"""
+    @lru_cache()
+    def team_id(self, name: str, ttl=ttl_hash()) -> List[str]:
+        """Retrieve all team IDs for a given user"""
         teams = self.teams(name)
         teamIDs = [team["id"] for team in teams]
         return teamIDs
 
 
-class Services(PagerDuty):
+class Services(object):
+
+    def __init__(self, cfg: Config, session: APISession) -> None:
+        self.cfg = cfg
+        self.session = session
+
     def list(self,params: dict | None = None) -> List[Dict] | Iterator[Dict]:
         """List all services in PagerDuty account"""
         if params:
@@ -224,7 +246,7 @@ class Services(PagerDuty):
         services = [u for u in filter(equiv, self.session.iter_all("services"))]
         return services
 
-    def serviceIDs(self, query: str, key: str = "name") -> List[str]:
+    def id(self, query: str, key: str = "name") -> List[str]:
         """Retrieve all serviceIDs matching query on the attribute name"""
         services = self.search(query, key)
         serviceIDs = [u["id"] for u in services]

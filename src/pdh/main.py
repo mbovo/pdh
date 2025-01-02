@@ -23,10 +23,9 @@ import time
 from rich import print
 from rich.console import Console
 from datetime import timezone
-from typing import Dict
 from .core import PDH
 
-from .pd import PagerDuty, Services, Users, Incidents
+from .pd import PagerDuty
 from .pd import (
     STATUS_TRIGGERED,
     STATUS_ACK,
@@ -187,8 +186,8 @@ def reassign(ctx, incident, user):
     default="table",
 )
 def apply(ctx, incident, path, output, script):
-    pd = Incidents(ctx.obj)
-    incs = pd.list()
+    pd = PagerDuty(ctx.obj)
+    incs = pd.incidents.list()
     if incident:
         incs = Filters.apply(incs, [Filters.inList("id", incident)])
 
@@ -200,7 +199,7 @@ def apply(ctx, incident, path, output, script):
         for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
             scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
 
-    ret = pd.apply(incs, scripts)
+    ret = pd.incidents.apply(incs, scripts)
     for rule in ret:
         print("[green]Applied rule:[/green]", rule["script"])
         if "error" in rule:
@@ -240,6 +239,8 @@ def apply(ctx, incident, path, output, script):
 @click.option("-T", "--teams", "teams", required=False, help="Filter only incidents assigned to this team IDs", default=None)
 def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort, teams):
 
+    pd = PagerDuty(ctx.obj)
+
     # Prepare defaults
     status = [STATUS_TRIGGERED]
     urgencies = DEFAULT_URGENCIES
@@ -251,7 +252,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         status.append(STATUS_ACK)
     userid = None
     if user:
-        userid = Users(ctx.obj).userID_by_name(user)
+        userid = pd.users.id(query=user, key="name")
 
     filter_re = None
     try:
@@ -261,7 +262,6 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         sys.exit(-2)
 
     incs = []
-    pd = Incidents(ctx.obj)
     console = Console()
     # fallback to configured userid
 
@@ -280,14 +280,14 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
     if type(teams) is str:
         if teams == "mine":
-            teams = [ t["id"] for t in Users(ctx.obj).me()["teams"] ]
+            teams = [ t["id"] for t in dict(pd.me())["teams"] ]
         else:
             teams = teams.lower().strip().split(",")
 
     if not everything and not userid:
         userid = pd.cfg["uid"]
     while True:
-        incs = pd.list(userid, statuses=status, urgencies=urgencies, teams=teams)
+        incs = pd.incidents.list(userid, statuses=status, urgencies=urgencies, teams=teams)
 
         incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
@@ -301,7 +301,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
         if alerts:
             for i in incs:
-                i["alerts"] = pd.alerts(i["id"])
+                i["alerts"] = pd.incidents.alerts(i["id"])
 
         # Build filtered list for output
         if output != "raw":
@@ -362,17 +362,17 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         # now apply actions like snooze, resolve, ack...
         ids = [i["id"] for i in incs]
         if ack:
-            pd.ack(incs)
+            pd.incidents.ack(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Marked {i} as [yellow]ACK[/yellow]")
         if snooze:
-            pd.snooze(incs)
+            pd.incidents.snooze(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Snoozing incident {i} for 4h")
         if resolve:
-            pd.resolve(incs)
+            pd.incidents.resolve(incs)
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Mark {i} as [green]RESOLVED[/green]")
@@ -387,7 +387,7 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
             if len(scripts) == 0:
                 print(f"[yellow]No rules found in {ppath}[/yellow]")
-            ret = pd.apply(incs, scripts)
+            ret = pd.incidents.apply(incs, scripts)
             for rule in ret:
                 print("[green]Applied rule:[/green]", rule["script"])
                 if "error" in rule:
@@ -427,9 +427,9 @@ def svc(ctx, config):
 @click.pass_context
 def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
     svcs = []
-    pd = Services(ctx.obj)
+    pd = PagerDuty(ctx.obj)
 
-    svcs = pd.list()
+    svcs = pd.services.list()
 
     # filtering
     svcs = Filters.apply(svcs, [Filters.inList("status", status.split(","))])
@@ -505,7 +505,7 @@ def teams_mine(ctx, output, fields):
     cfg: Config = ctx.obj
     pd = PagerDuty(cfg)
 
-    teams: Dict = pd.me()['teams']
+    teams = dict(pd.me())['teams']
 
     # set fields that will be displayed
     if type(fields) is str:

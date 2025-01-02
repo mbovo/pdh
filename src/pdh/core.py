@@ -117,9 +117,9 @@ class PDH(object):
         incs = pd.list()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
 
-        users = Users(cfg).userID_by_name(user)
+        users = Users(cfg).id_by_name(user)
         if users is None or len(users) == 0:
-            users = Users(cfg).userID_by_name(user)
+            users = Users(cfg).id_by_name(user)
 
         for id in incIDs:
             print(f"Reassign incident {id} to {users}")
