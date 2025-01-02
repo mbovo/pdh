@@ -26,7 +26,7 @@ def mock_config():
 
 @pytest.fixture
 def mock_users():
-    with patch('pdh.core.Users') as mock:
+    with patch('pdh.core.PagerDuty') as mock:
         yield mock
 
 def test_list_user_default_fields(mock_config, mock_users):
