@@ -35,7 +35,7 @@ from .pd import (
     DEFAULT_URGENCIES,
 )
 from . import Filters, Transformations
-from .config import Config, load_and_validate, setup_config
+from .config import load_and_validate, setup_config
 from .output import print_items, VALID_OUTPUTS
 
 
@@ -502,33 +502,9 @@ def teams(ctx, config):
 @click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
 @click.pass_context
 def teams_mine(ctx, output, fields) -> None:
-    cfg: Config = ctx.obj
-    pd = PagerDuty(cfg)
+    if not PDH.list_teams(ctx.obj, mine=True, output=output, fields=fields):
+        sys.exit(1)
 
-    teams = dict(pd.me())['teams']
-
-    # set fields that will be displayed
-    if type(fields) is str:
-        fields = fields.lower().strip().split(",")
-    else:
-        fields = ["id", "summary", "html_url"]
-    def plain_print_f(i):
-        s = ""
-        for f in fields:
-            s += f"{i[f]}\t"
-        print(s)
-
-    if output != "raw":
-        transformations = dict()
-
-        for f in fields:
-            transformations[f] = Transformations.extract(f)
-
-        filtered = Transformations.apply(teams, transformations)
-    else:
-        filtered = teams
-
-    print_items(filtered, output, plain_print_f=plain_print_f)
 
 
 @teams.command(help="List teams in a pagerduty account", name="ls")
@@ -536,30 +512,5 @@ def teams_mine(ctx, output, fields) -> None:
 @click.option("-f", "--fields", "fields", required=False, help="Fields to filter and output", default=None)
 @click.pass_context
 def teams_list(ctx, output, fields) -> None:
-    cfg: Config = ctx.obj
-    pd = PagerDuty(cfg)
-
-    teams = pd.teams.list()
-
-    if type(fields) is str:
-        fields = fields.lower().strip().split(",")
-    else:
-        fields = ["id", "summary", "html_url"]
-
-    def plain_print_f(i):
-        s = ""
-        for f in fields:
-            s += f"{i[f]}\t"
-        print(s)
-
-    if output != "raw":
-        transformations = dict()
-
-        for f in fields:
-            transformations[f] = Transformations.extract(f)
-
-        filtered = Transformations.apply(teams, transformations)
-    else:
-        filtered = teams
-
-    print_items(filtered, output, plain_print_f=plain_print_f)
+    if not PDH.list_teams(ctx.obj, mine=False, output=output, fields=fields):
+        sys.exit(1)

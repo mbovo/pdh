@@ -82,6 +82,43 @@ class PDH(object):
             return False
 
     @staticmethod
+    def list_teams(cfg: Config, mine: bool = True, output='table', fields=None) -> bool:
+        try:
+            pd = PagerDuty(cfg)
+            if mine:
+                teams = dict(pd.me())['teams']
+            else:
+                teams = pd.teams.list()
+
+            # set fields that will be displayed
+            if type(fields) is str:
+                fields = fields.lower().strip().split(",")
+            else:
+                fields = ["id", "summary", "html_url"]
+
+            def plain_print_f(i):
+                s = ""
+                for f in fields:
+                    s += f"{i[f]}\t"
+                print(s)
+
+            if output != "raw":
+                transformations = dict()
+
+                for f in fields:
+                    transformations[f] = Transformations.extract(f)
+
+                filtered = Transformations.apply(teams, transformations)
+            else:
+                filtered = teams
+
+            print_items(filtered, output, plain_print_f=plain_print_f)
+            return True
+        except UnauthorizedException as e:
+            print(f"[red]{e}[/red]")
+            return False
+
+    @staticmethod
     def ack(cfg: Config, incIDs: list = []) -> None:
         pd = PagerDuty(cfg)
         incs = pd.incidents.list()
