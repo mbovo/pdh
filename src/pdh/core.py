@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from pdh import Transformations
 from .filters import Filter
+from . import Transformations
 from .pd import PagerDuty, UnauthorizedException
 from .config import Config
 from .output import print, print_items
-
+from typing import List
+from datetime import timezone
 
 class PDH(object):
 
@@ -117,6 +118,69 @@ class PDH(object):
         except UnauthorizedException as e:
             print(f"[red]{e}[/red]")
             return False
+
+    @staticmethod
+    def list_services(cfg: Config, output: str = 'table', fields: List | None = None, sort_by:  str| None = None, reverse_sort: bool = False, status: str = "active,warning,critical") -> bool:
+        try:
+            pd = PagerDuty(cfg)
+            svcs = pd.services.list()
+
+            svcs = Filter.apply(svcs, [Filter.inList("status", status.split(","))])
+
+            # set fields that will be displayed
+            if type(fields) is str:
+                fields = fields.lower().strip().split(",")
+            else:
+                fields = ["id", "name", "description", "status","created_at", "updated_at", "html_url"]
+
+            if output != "raw":
+                transformations = dict()
+
+                for f in fields:
+                    transformations[f] = Transformations.extract(f)
+                    # special cases
+                    if f == "status":
+                        transformations[f] = Transformations.extract_decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={
+                                                                            "active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
+                    if f == "url":
+                        transformations[f] = Transformations.extract("html_url")
+                    if f in ["created_at", "updated_at"]:
+                        transformations[f] = Transformations.extract_date(
+                            f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc)
+
+                filtered = Transformations.apply(svcs, transformations)
+            else:
+                # raw output, using json format
+                filtered = svcs
+
+            # define here how print in "plain" way (ie if output=plain)
+            def plain_print_f(i):
+                s = ""
+                for f in fields:
+                    s += f"{i[f]}\t"
+                print(s)
+
+            if sort_by:
+                sort_fields: str | list[str] = sort_by.split(",") if ',' in sort_by else sort_by
+
+                if isinstance(sort_fields, list) and len(sort_fields) > 1:
+                    filtered = sorted(filtered, key=lambda x: [
+                                    x[k] for k in sort_fields], reverse=reverse_sort)
+                else:
+                    filtered = sorted(
+                        filtered, key=lambda x: x[sort_fields], reverse=reverse_sort)
+
+            print_items(filtered, output, plain_print_f=plain_print_f)
+            return True
+
+        except UnauthorizedException as e:
+                print(f"[red]{e}[/red]")
+                return False
+        except KeyError:
+                print(f"[red]Invalid sort field: {sort_by}[/red]")
+                ff = ", ".join(fields) if fields else ""
+                print(f"[yellow]Available fields: {ff}[/yellow]")
+                return False
 
     @staticmethod
     def ack(cfg: Config, incIDs: list = []) -> None:

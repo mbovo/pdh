@@ -22,7 +22,6 @@ import os
 import time
 from rich import print
 from rich.console import Console
-from datetime import timezone
 from .core import PDH
 
 from .pd import PagerDuty
@@ -363,61 +362,8 @@ def svc(ctx, config):
 @click.option("-s", "--status", "status", required=False, help="Filter for service status", default="active,warning,critical")
 @click.pass_context
 def svc_list(ctx, output, fields, sort_by, reverse_sort, status):
-    svcs = []
-    pd = PagerDuty(ctx.obj)
-
-    svcs = pd.services.list()
-
-    # filtering
-    svcs = Filters.apply(svcs, [Filters.inList("status", status.split(","))])
-
-    # set fields that will be displayed
-    if type(fields) is str:
-        fields = fields.lower().strip().split(",")
-    else:
-        fields = ["id", "name", "description", "status","created_at", "updated_at", "html_url"]
-
-    if output != "raw":
-        transformations = dict()
-
-        for f in fields:
-            transformations[f] = Transformations.extract(f)
-            # special cases
-            if f == "status":
-                transformations[f] = Transformations.extract_decorate("status", color_map={"active": "green", "warning": "yellow", "critical": "red", "unknown": "gray", "disabled": "gray"}, change_map={"active": "OK", "warning": "WARN", "critical": "CRIT", "unknown": "❔", "disabled": "off"})
-            if f == "url":
-                transformations[f] = Transformations.extract("html_url")
-            if f in ["created_at", "updated_at"]:
-                transformations[f] = Transformations.extract_date(f, "%Y-%m-%dT%H:%M:%S%z", timezone.utc )
-
-        filtered = Transformations.apply(svcs, transformations)
-    else:
-        # raw output, using json format
-        filtered = svcs
-
-        # define here how print in "plain" way (ie if output=plain)
-    def plain_print_f(i):
-        s = ""
-        for f in fields:
-            s += f"{i[f]}\t"
-        print(s)
-
-
-    if sort_by:
-        try:
-            sort_fields: str|list[str] = sort_by.split(",")  if ',' in sort_by else sort_by
-
-            if isinstance(sort_fields, list) and len(sort_fields) > 1:
-                filtered = sorted(filtered, key=lambda x: [x[k] for k in sort_fields], reverse=reverse_sort)
-            else:
-                filtered = sorted(filtered, key=lambda x: x[sort_fields], reverse=reverse_sort)
-        except KeyError:
-            print(f"[red]Invalid sort field: {sort_by}[/red]")
-            print(f"[yellow]Available fields: {', '.join(fields)}[/yellow]")
-            sys.exit(-2)
-
-    print_items(filtered, output, plain_print_f=plain_print_f)
-
+    if not PDH.list_services(ctx.obj, output, fields, sort_by, reverse_sort, status):
+        sys.exit(1)
 
 @main.group(help="Operate on Teams", name="teams")
 @click.option( "-c", "--config", envvar="PDH_CONFIG", default="~/.config/pdh.yaml", help="Configuration file location (default: ~/.config/pdh.yaml)", )
