@@ -99,6 +99,26 @@ Any other incident currently outstanding:
 pdh inc ls -e
 ```
 
+#### Listing incident by team
+
+Listing only outstanding alerts only if they are assigned to a specific team:
+
+```bash
+pdh inc ls -e --teams mine
+```
+
+Search for a given team id:
+
+```bash
+pdh teams ls
+```
+
+Use specific id (list):
+
+```bash
+pdh inc ls -e --team-id "P1LONJG,P4SEF5R"
+```
+
 ### Sorting incident by field
 
 ```bash
