@@ -28,8 +28,9 @@ from pdh.rules import rule
 def main(alerts, pagerduty, Filters, Transformations):
 
     # From the given input extract only incidents with the word "EC2" in title
-    filtered = Filters.apply(
-        alerts, filters=[Filters.regexp("service.summary", ".*Graph.*")])
+    filtered = Filters.apply(alerts, filters=[
+                    Filters.not_regexp("service.summary", ".*Graph.*")
+                ])
 
     # # acknowledge all previously filtered incidents
     #pagerduty.incidents.ack(filtered)
@@ -49,4 +50,4 @@ def main(alerts, pagerduty, Filters, Transformations):
 
 
 if __name__ == "__main__":
-    main()
+    main()                  # type: ignore
