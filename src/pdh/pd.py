@@ -15,7 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import subprocess
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator, List, Callable
 from rich import print
 from pdpyras import APISession, PDClientError
 import json
@@ -40,7 +40,25 @@ DEFAULT_URGENCIES = [URGENCY_HIGH, URGENCY_LOW]
 def ttl_hash(seconds=30):
     return round(time.time() / seconds)
 
+class RuleExecutionError(Exception):
+    pass
+
+class RuleInvalidOutput(TypeError):
+    pass
+
 class PagerDuty(object):
+
+    # Expose the constants to the outside (rules)
+
+    INCIDENT_STATUS_TRIGGERED = STATUS_TRIGGERED
+    INCIDENT_STATUS_ACK = STATUS_ACK
+    INCIDENT_STATUS_RESOLVED = STATUS_RESOLVED
+
+    INCIDENT_URGENCY_HIGH = URGENCY_HIGH
+    INCIDENT_URGENCY_LOW = URGENCY_LOW
+
+    DEFAULT_STATUSES = DEFAULT_STATUSES
+    DEFAULT_URGENCIES = DEFAULT_URGENCIES
 
     def __init__(self, cfg: Config) -> None:
         super().__init__()
@@ -139,12 +157,19 @@ class Incidents(object):
             except Exception as e:
                 print(str(e))
 
-    def apply(self, incs, paths: List[str]) -> List:
-        rets = []
-        for script in paths:
-            output = self.apply_single(incs, script)
-            rets.append({"script": script} | output)
-        return rets
+    def apply(self, incs: List | Dict, paths: List[str], printFunc, errFunc: Callable ) -> List | Dict:
+        try:
+            output = incs   # initial input
+            for script in paths:
+                # chain the output of the previous script to the input of the next
+                output = self.apply_single(output, script)
+                printFunc(script)
+            return output
+        except RuleExecutionError as e:
+            errFunc(str(e))
+        except RuleInvalidOutput as e:
+            errFunc(str(e))
+        return incs
 
     def apply_single(self, incs, script: str) -> Dict:
         process = subprocess.Popen(script, text=True, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
@@ -154,11 +179,9 @@ class Incidents(object):
         if process.returncode == 0:
             output = json.loads(stdout)
             if type(output) not in [dict, list, tuple]:
-                output = {"output": str(output)}
-            else:
-                output = {"output": output}
+                raise RuleInvalidOutput(f"invalid rule output it must be a json object, found: {type(output)}")
         else:
-            output = {"error": stderr}
+            raise RuleExecutionError(f"Error executing rule: {stderr}")
 
         return output
 

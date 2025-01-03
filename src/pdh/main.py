@@ -141,16 +141,21 @@ def apply(ctx, incident, path, output, script):
         for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
             scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
 
-    ret = pd.incidents.apply(incs, scripts)
-    for rule in ret:
-        print("[green]Applied rule:[/green]", rule["script"])
-        if "error" in rule:
-            print("[red]Error:[/red]", rule["error"])
-        else:
-            if type(rule["output"]) is not str:
-                print_items(rule["output"], output)
-            else:
-                print(rule["output"])
+    ret = pd.incidents.apply(incs, scripts, print, print)
+
+    if len(scripts) == 0:
+        print(f"[yellow]No rules found in {path}[/yellow]")
+
+    def printFunc(name: str):
+        print("[green]Applied rule:[/green]", name)
+    def errFunc(error: str):
+        print("[red]Error:[/red]", error)
+
+    ret = pd.incidents.apply(incs, scripts, printFunc, errFunc)
+    if type(ret) is not str:
+        incs = list(ret)
+    else:
+        print(ret)
 
     pass
 
@@ -167,7 +172,7 @@ def apply(ctx, incident, path, output, script):
 @click.option("-l", "--low", is_flag=True, default=False, help="List only LOW priority incidents")
 @click.option("-w", "--watch", is_flag=True, default=False, help="Continuously print the list")
 @click.option("-t", "--timeout", default=5, help="Watch every x seconds (work only if -w is flagged)")
-@click.option("--apply", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
+@click.option("--rules", is_flag=True, default=False, help="apply rules from a path (see --rules--path")
 @click.option("--rules-path", required=False, default="~/.config/pdh_rules", help="Apply all executable find in this path")
 @click.option("-R", "--regexp", default="", help="regexp to filter incidents")
 @click.option("-o","--output","output",help="output format",required=False,type=click.Choice(VALID_OUTPUTS),default="table")
@@ -179,7 +184,7 @@ def apply(ctx, incident, path, output, script):
 @click.option("--sort", "sort_by", required=False, help="Sort by field name", default=None)
 @click.option("--reverse", "reverse_sort", required=False, help="Reverse the sort", is_flag=True, default=False)
 @click.option("-T", "--teams", "teams", required=False, help="Filter only incidents assigned to this team IDs", default=None)
-def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, apply, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort, teams):
+def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low, watch, timeout, regexp, rules, rules_path, fields, alerts, alert_fields, service_re, excluded_service_re, sort_by, reverse_sort, teams):
 
     pd = PagerDuty(ctx.obj)
 
@@ -229,7 +234,31 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
     if not everything and not userid:
         userid = pd.cfg["uid"]
     while True:
+
         incs = pd.incidents.list(userid, statuses=status, urgencies=urgencies, teams=teams)
+
+        if rules:
+            scripts = []
+            ppath = os.path.expanduser(os.path.expandvars(rules_path))
+            for root, _, filenames in os.walk(ppath):
+                for filename in filenames:
+                    fullpath = os.path.join(root, filename)
+                    if os.access(fullpath, os.X_OK):
+                        scripts.append(fullpath)
+
+            if len(scripts) == 0:
+                print(f"[yellow]No rules found in {ppath}[/yellow]")
+
+            def printFunc(name: str):
+                print("[green]Applied rule:[/green]", name)
+            def errFunc(error:str):
+                print("[red]Error:[/red]", error)
+
+            ret = pd.incidents.apply(incs, scripts, printFunc, errFunc)
+            if type(ret) is not str:
+                incs = list(ret)
+            else:
+                print(ret)
 
         incs = Filters.apply(incs, filters=[Filters.regexp("title", filter_re)])
 
@@ -318,27 +347,6 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
             if output not in ["yaml", "json"]:
                 for i in ids:
                     print(f"Mark {i} as [green]RESOLVED[/green]")
-        if apply:
-            scripts = []
-            ppath = os.path.expanduser(os.path.expandvars(rules_path))
-            for root, _, filenames in os.walk(ppath):
-                for filename in filenames:
-                    fullpath = os.path.join(root, filename)
-                    if os.access(fullpath, os.X_OK):
-                        scripts.append(fullpath)
-
-            if len(scripts) == 0:
-                print(f"[yellow]No rules found in {ppath}[/yellow]")
-            ret = pd.incidents.apply(incs, scripts)
-            for rule in ret:
-                print("[green]Applied rule:[/green]", rule["script"])
-                if "error" in rule:
-                    print("[red]Error:[/red]", rule["error"])
-                else:
-                    if type(rule["output"]) is not str:
-                        print_items(rule["output"], output)
-                    else:
-                        print(rule["output"])
 
         if not watch:
             break

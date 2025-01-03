@@ -16,10 +16,9 @@
 #
 from . import transformations as _Transformations
 from .filters import Filter as _Filters
-from .pd import Users as _Users, Incidents as _Incidents
+from .pd import PagerDuty as _PagerDuty
 
 # Exposing Internal things
 Transformations = _Transformations
 Filters = _Filters
-Users = _Users
-Incidents = _Incidents
+PagerDuty = _PagerDuty
