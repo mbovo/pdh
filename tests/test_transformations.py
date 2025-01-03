@@ -100,7 +100,7 @@ def test_extract_field_change() -> None:
 
 
 def test_extract_path():
-    t: dict = {"newfield": Transformations.extract("dictfield.inside", "-x-")}
+    t: dict = {"newfield": Transformations.extract("$.dictfield.inside", "-x-")}
     result = Transformations.apply(ilist, t)
     assert len(result) == 3
     assert result[0]["newfield"] == "-x-"

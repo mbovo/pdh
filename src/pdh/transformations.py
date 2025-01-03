@@ -86,7 +86,12 @@ def extract_change(path: str, change_map: Dict[str, str] | None = None, default:
         try:
             # recursively return inner fields if they exist in the form of "field.subfield"
             expr = jsonpath_ng.parse(path)
-            ret = [ match.value for match in expr.find(i) ][0]
+            matches = [match.value for match in expr.find(i)]
+            if not matches:
+                if default is not None:
+                    return default
+                raise KeyError(f"Path '{path}' not found in the dictionary.")
+            ret = matches[0]
             #ret = DikDik.get_path(i, path)
             if change_map and ret in change_map.keys():
                 return change_map[ret]
