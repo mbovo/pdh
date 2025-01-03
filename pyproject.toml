@@ -22,7 +22,7 @@ ignore = [
 
 [tool.poetry]
 name = "pdh"
-version = "0.7.0"
+version = "0.8.0"
 description = "Pagerduty CLI for Humans"
 authors = ["Manuel Bovo <manuel.bovo@gmail.com>"]
 license = "GPL-3.0-or-later"

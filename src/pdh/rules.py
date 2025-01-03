@@ -21,7 +21,7 @@ import subprocess
 from typing import Union
 
 from collections import namedtuple
-from pdh import config, Incidents
+from pdh import config, PagerDuty, Filters, Transformations
 
 ShellResponse = namedtuple("ShellResponse", "stdout stderr rc")
 
@@ -34,7 +34,7 @@ def rule(func):
     """
     Decorate a function transforming it into a Rule.
 
-    The decorated function must have at least one parameters: `input` in which all the
+    The decorated function must have at least one parameters: `alerts` in which all the
     input data will be placed as dictionary. This will be the raw input data directly from PagerDuty APIs ready to use
 
     Each value returned by the decorated function will be used as output.
@@ -46,7 +46,10 @@ def rule(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         input = __load_data_from_stdin()
-        kwargs["input"] = input
+        kwargs["alerts"] = input
+        kwargs["pagerduty"] = client()
+        kwargs["Filters"] = Filters
+        kwargs["Transformations"] = Transformations
         ret = func(*args, **kwargs)
         print(json.dumps(ret))
         return ret
@@ -72,7 +75,7 @@ def exec(cmd: Union[str, list]) -> ShellResponse:
     return ShellResponse(out, err, rc)
 
 
-def chain(incs: list, path: str, pd: Incidents | None = None):
+def chain(incs: list, path: str, pd: PagerDuty | None = None):
     """
     Chain loading another rule with the given list of incidents
       Parameters:
@@ -84,9 +87,9 @@ def chain(incs: list, path: str, pd: Incidents | None = None):
     """
 
     if pd is None:
-        pd = api()
+        pd = client()
 
-    ret = pd.apply_single(incs, path)
+    ret = pd.incidents.apply_single(incs, path)
     if "output" in ret:
         return ret["output"]
     if "stderr" in ret:
@@ -94,7 +97,7 @@ def chain(incs: list, path: str, pd: Incidents | None = None):
     return None
 
 
-def api(config_file: str = "~/.config/pdh.yaml") -> Incidents:
+def client(config_file: str = "~/.config/pdh.yaml") -> PagerDuty:
 
     """
     Initialize the Pagerduty APIs in a more easy way
@@ -103,4 +106,4 @@ def api(config_file: str = "~/.config/pdh.yaml") -> Incidents:
       Returns:
         Incidents (object): the api object capable of doing things
     """
-    return Incidents(config.load_and_validate(config_file))
+    return PagerDuty(config.load_and_validate(config_file))

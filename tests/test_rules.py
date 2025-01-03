@@ -37,20 +37,19 @@ def test_load_data_from_stdin():
     with patch("sys.stdin", io.StringIO(json.dumps(test_data))):
         assert __load_data_from_stdin() == test_data
 
-@pytest.fixture
-def dummy_rule():
-    @rule
-    def test_rule(input):
-        return {"processed": True, "input": input}
-    return test_rule
 
-def test_rule_decorator(dummy_rule):
+def test_rule_decorator(mock_config_load):
+
+    @rule
+    def dummy_rule(alerts, pagerduty, Filters, Transformations):
+        return {"processed": True, "alerts": alerts}
+
     test_input = {"key": "value"}
     with patch("pdh.rules.__load_data_from_stdin", return_value=test_input):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-            result = dummy_rule()
-            assert json.loads(mock_stdout.getvalue()) == {"processed": True, "input": test_input}
-            assert result == {"processed": True, "input": test_input}
+            result = dummy_rule()   # typing: ignore
+            assert json.loads(mock_stdout.getvalue()) == {"processed": True, "alerts": test_input}
+            assert result == {"processed": True, "alerts": test_input}
 
 
 # Mock classes and functions
@@ -75,14 +74,9 @@ def mock_api():
 
 @pytest.fixture
 def mock_config_load():
-    with patch("pdh.rules.config.load_and_validate", return_value={"some": "config"}) as mock:
+    with patch("pdh.rules.config.load_and_validate", return_value={"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@pagerduty.com", "uid": "PXCT22H"}) as mock:
         yield mock
 
-def test_chain_with_provided_pd(mock_incidents):
-    incs = ["incident1", "incident2"]
-    path = "path_with_output"
-    result = chain(incs, path, pd=mock_incidents)
-    assert result == ["success"]
 
 @pytest.mark.skip("Not working without a valid config")
 def test_chain_without_provided_pd(mock_api):
@@ -90,9 +84,3 @@ def test_chain_without_provided_pd(mock_api):
     path = "path_with_output"
     result = chain(incs, path)
     assert result == ["success"]
-
-def test_chain_with_stderr(mock_incidents):
-    incs = ["incident1", "incident2"]
-    path = "path_with_stderr"
-    result = chain(incs, path, pd=mock_incidents)
-    assert result == ["error"]

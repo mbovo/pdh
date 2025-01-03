@@ -16,6 +16,7 @@
 #
 from typing import Any, Callable, Dict, Iterator, List
 from datetime import datetime, timezone
+import jsonpath_ng
 from rich.pretty import pretty_repr
 from dikdik import Dict as DikDik
 
@@ -84,7 +85,14 @@ def extract_change(path: str, change_map: Dict[str, str] | None = None, default:
     def f(i: dict) -> Any:
         try:
             # recursively return inner fields if they exist in the form of "field.subfield"
-            ret = DikDik.get_path(i, path)
+            expr = jsonpath_ng.parse(path)
+            matches = [match.value for match in expr.find(i)]
+            if not matches:
+                if default is not None:
+                    return default
+                raise KeyError(f"Path '{path}' not found in the dictionary.")
+            ret = matches[0]
+            #ret = DikDik.get_path(i, path)
             if change_map and ret in change_map.keys():
                 return change_map[ret]
             return ret
@@ -105,7 +113,10 @@ def extract_date(field_name: str, format: str = "%Y-%m-%dT%H:%M:%SZ", tz: timezo
       - Callable[[Dict], Any]: A function that takes a dictionary and returns a human-readable relative time string.
     """
     def f(i: dict) -> str:
-      val = DikDik.get_path(i, field_name)
+      expr = jsonpath_ng.parse(field_name)
+      val = [match.value for match in expr.find(i)][0]
+
+      #val = DikDik.get_path(i, field_name)
       duration = datetime.now(tz) - datetime.strptime(val, format)
       date = {}
       date["d"], remaining = divmod(duration.total_seconds(), 86_400)
@@ -137,7 +148,9 @@ def extract_decorate(field_name: str, color_map: dict | None = None, default_col
     - Callable: A function that takes a dictionary and returns the transformed field value as a string.
     """
     def f(i: dict) -> str:
-        item = DikDik.get_path(i, field_name)
+        expr = jsonpath_ng.parse(field_name)
+        item = [match.value for match in expr.find(i)][0]
+        #item = DikDik.get_path(i, field_name)
 
         if not item:
             return ""
@@ -179,12 +192,17 @@ def extract_assignees(color: str = "magenta") -> Callable[[dict], str]:
 
 def extract_alerts(field_name, alert_fields: list[str] = ["id", "summary", "created_at", "status"]):
     def f(i: dict) -> str:
-        alerts = DikDik.get_path(i, field_name)
+        expr = jsonpath_ng.parse(field_name)
+        alerts = [match.value for match in expr.find(i)][0]
+        # alerts = DikDik.get_path(i, field_name)
         ret = dict()
         for alert in alerts:
             alert_obj = dict()
             for field in alert_fields:
-                DikDik.set_path(alert_obj, field, DikDik.get_path(alert, field))
+
+                subval = alert[field] if field in alert else None
+                if subval is not None:
+                    DikDik.set_path(alert_obj, field, subval)
 
             ret[alert["id"]] = alert_obj
         return pretty_repr(ret)

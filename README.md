@@ -189,7 +189,7 @@ pdh inc ls -e -o raw
 `PDH` support custom scripting applied to your incidents list. These `rules` are in fact any type of executable you can run on your machine.
 
 ```bash
-pdh inc apply INCID001 -s /path/to/my/script.py -s /path/to/binary
+pdh inc ls -e --rules-path ./rules/ --rules
 ```
 
 The `apply` subcommand will call the listed executable/script passing along a json to stdin with the incident information. The called script can apply any type of checks/sideffects and output another json to stout to answer the call.
@@ -202,21 +202,30 @@ An example rule can be written in python with the following lines
 
 ```python
 #!/usr/bin/env python3
-from pdh import rules, Filter
+from pdh.rules import rule
 
-@rules.rule
-def main(input):
-    return {i["id"]: i["summary"] for i in input}
+@rule
+def main(alerts, pagerduty, Filters, Transformations):
+
+    # From the given input extract only incidents with the word "EC2" in title
+    filtered = Filters.apply(alerts, filters=[
+                    Filters.not_regexp("service.summary", ".*My Service.*"),
+                    Filters.regexp("title", ".*EC2.*")
+                ])
+
+    # # auto acknowledge all previously filtered incidents
+    pagerduty.incidents.ack(filtered)
+
+    return filtered
 
 if __name__ == "__main__":
-    main()
+    main()                  # type: ignore
 ```
 
-This is the simplest rule you can write, reading the input and simply output a new dictionary with the entries. It will output something like:
 
 ```bash
 
- pdh inc apply Q1LNI5LNM7RZ2C Q1C5KG41H0SZAM -s ./a.py
+ pdh inc ls -e --rules-path ./rules/ --rules
 ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ script ┃ Q1LNI5LNM7RZ2C                                                     ┃ Q1C5KG41H0SZAM                                                                       ┃
 ┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -228,51 +237,7 @@ The default output is `table` with one line for each script run and with one col
 
 ### Rules: more examples
 
-```python
-#!/usr/bin/env python3
-
-# Needed imports
-from pdh import rules, Filter
-
-# This annotation make the main() method parse stdin as json into the parameter called input
-# All returned values are converted to json and printed to stdout
-@rules.rule
-def main(input):
-
-    # Initialize PagerDuty's APIs
-    api = rules.api()
-
-    # From the given input extract only incidents with the word cassandra in title
-    incs = Filter.objects(input, filters=[Filter.regexp("title", ".*EC2.*")])
-
-    # ackwnoledge all previously filtered incidents
-    api.ack(incs)
-
-    # resolve all previously filtered incidents
-    api.resolve(incs)
-
-    # snooze all previously filtered incidents for 1h
-    api.snooze(incs, duration=3600)
-
-    # Chain a given rule, i.e call that rule with the output of this one
-    # chain-loading supports only a single binary, not directories
-    c = rules.chain(incs, "rules/test_chaining.sh")
-
-    # Execute an external program and get the output/err/return code
-    p: rules.ShellResponse = rules.exec('kubectl get nodes -o name')
-    if p.rc > 0:
-      nodes = p.stdout.split("\n")
-
-    # if you return a dict will be rendered with each item as a column in a table
-    # Othrwise will be converted as string
-    return {i["id"]: i["summary"] for i in incs}
-
-
-if __name__ == "__main__":
-    main()
-
-
-```
+see [rules](./rules) for more
 
 ## Requirements
 
@@ -289,7 +254,6 @@ task setup
 ```
 
 This will create a python virtualenv and install `pre-commit` and `poetry` in your system if you lack them.
-
 
 ## License
 
