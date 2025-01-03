@@ -19,8 +19,7 @@ from typing import Callable, Iterator, List, Dict, Any
 
 class Filter(object):
     """
-    Filter is a collection of methods to functions to filter out items from an iterator,
-    useful when used in conjunction with filter()
+    Filter is a collection of methods to filter out items from an iterator based on a set of conditions.
     """
 
     @staticmethod
