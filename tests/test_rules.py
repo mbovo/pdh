@@ -39,10 +39,12 @@ def test_load_data_from_stdin():
 
 @pytest.fixture
 def dummy_rule():
-    @rule
-    def test_rule(alerts, pagerduty, Filters, Transformations):
-        return {"processed": True, "alerts": alerts}
-    return test_rule
+    with patch("pdh.rules.client") as client:
+        client.return_value = MagicMock()
+        @rule
+        def test_rule(alerts, pagerduty, Filters, Transformations):
+            return {"processed": True, "alerts": alerts}
+        return test_rule
 
 def test_rule_decorator(dummy_rule):
     test_input = {"key": "value"}
