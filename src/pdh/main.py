@@ -227,7 +227,8 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
 
     if type(teams) is str:
         if teams == "mine":
-            teams = [ t["id"] for t in dict(pd.me())["teams"] ]
+            teamNames = dict(pd.me)["teams"] if "teams" in dict(pd.me) else []
+            teams = [ t["id"] for t in teamNames if "id" in t ]
         else:
             teams = teams.lower().strip().split(",")
 

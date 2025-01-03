@@ -34,7 +34,7 @@ def rule(func):
     """
     Decorate a function transforming it into a Rule.
 
-    The decorated function must have at least one parameters: `input` in which all the
+    The decorated function must have at least one parameters: `alerts` in which all the
     input data will be placed as dictionary. This will be the raw input data directly from PagerDuty APIs ready to use
 
     Each value returned by the decorated function will be used as output.

@@ -71,14 +71,13 @@ class PagerDuty(object):
         self.incidents = Incidents(self.cfg, self.session)
         self.teams = Teams(self.cfg, self.session)
         try:
-            self.__me: List | Dict = self.session.rget("/users/me")
+            self.abilities: List | Dict = self.session.rget("/abilities")
         except PDClientError as e:
             raise UnauthorizedException(str(e))
-
-    def me(self) -> List[Any] | Dict[Any, Any]:
-        """Retrieve the user information for the configured API key"""
-        return self.__me
-
+        try:
+            self.me: List[Any] | Dict[Any, Any] = self.session.rget("/users/me")
+        except PDClientError:
+            self.me = {}
 
 class Incidents(object):
 

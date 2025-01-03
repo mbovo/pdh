@@ -87,7 +87,7 @@ class PDH(object):
         try:
             pd = PagerDuty(cfg)
             if mine:
-                teams = dict(pd.me())['teams']
+                teams = dict(pd.me)['teams'] if 'teams' in pd.me else []
             else:
                 teams = pd.teams.list()
 
