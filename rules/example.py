@@ -29,7 +29,7 @@ def main(alerts, pagerduty, Filters, Transformations):
 
     # From the given input extract only incidents with the word "EC2" in title
     filtered = Filters.apply(alerts, filters=[
-                    Filters.not_regexp("service.summary", ".*Graph.*")
+                    Filters.regexp("service.summary", ".*Graph.*")
                 ])
 
     # # acknowledge all previously filtered incidents

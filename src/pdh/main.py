@@ -120,46 +120,6 @@ def snooze(ctx, incidentids, duration):
 def reassign(ctx, incident, user):
     PDH.reassign(ctx.obj, incident, user)
 
-
-@inc.command(help="Apply scripts with sideeffects to given incident")
-@click.pass_context
-@click.option("-p", "--path", required=False, default=None, help="Subdirectory with scripts to run")
-@click.option("-s", "--script", required=False, default=None, multiple=True, help="Single script to run")
-@click.argument("incident", nargs=-1)
-@click.option( "-o", "--output", "output", help="output format", required=False, type=click.Choice(VALID_OUTPUTS), default="table")
-def apply(ctx, incident, path, output, script):
-    pd = PagerDuty(ctx.obj)
-    incs = pd.incidents.list()
-    if incident:
-        incs = Filters.apply(incs, [Filters.inList("id", incident)])
-
-    # load the given parameters
-    scripts = script
-    # or cycle on every executable found in the given path
-    if path is not None:
-        scripts = []
-        for root, _, filenames in os.walk(os.path.expanduser(os.path.expandvars(path))):
-            scripts = [os.path.join(root, fname) for fname in filenames if os.access(os.path.join(root, fname), os.X_OK)]
-
-    ret = pd.incidents.apply(incs, scripts, print, print)
-
-    if len(scripts) == 0:
-        print(f"[yellow]No rules found in {path}[/yellow]")
-
-    def printFunc(name: str):
-        print("[green]Applied rule:[/green]", name)
-    def errFunc(error: str):
-        print("[red]Error:[/red]", error)
-
-    ret = pd.incidents.apply(incs, scripts, printFunc, errFunc)
-    if type(ret) is not str:
-        incs = list(ret)
-    else:
-        print(ret)
-
-    pass
-
-
 @inc.command(help="List incidents", name="ls")
 @click.pass_context
 @click.option("-e", "--everything", help="List all incidents not only assigned to me", is_flag=True, default=False)
