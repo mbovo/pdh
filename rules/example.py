@@ -29,9 +29,9 @@ def main(alerts, pagerduty, Filters, Transformations):
 
     # From the given input extract only incidents with the word "EC2" in title
     filtered = Filters.apply(
-        alerts, filters=[Filters.regexp("title", ".*EC2.*")])
+        alerts, filters=[Filters.regexp("service.summary", ".*Graph.*")])
 
-    # acknowledge all previously filtered incidents
+    # # acknowledge all previously filtered incidents
     #pagerduty.incidents.ack(filtered)
 
     # # resolve all previously filtered incidents
@@ -40,17 +40,11 @@ def main(alerts, pagerduty, Filters, Transformations):
     # # snooze all previously filtered incidents for 1h
     # pagerduty.incidents.snooze(filtered, duration=3600)
 
-    # # Chain a given rule, i.e call that rule with the output of this one
-    # # chain-loading supports only a single binary, not directories
-    # c = rules.chain(filtered, "rules/test_chaining.sh")
-
     # # Execute an external program and get the output/err/return code
     # p: rules.ShellResponse = rules.exec('kubectl get nodes -o name')
     # if p.rc > 0:
     #     nodes = p.stdout.split("\n")
 
-    # if you return a list of dicts, it will be rendered with each item as a row in a table
-    # Othrwise will be converted as string
     return filtered
 
 
