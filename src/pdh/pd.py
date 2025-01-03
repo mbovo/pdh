@@ -157,7 +157,7 @@ class Incidents(object):
             except Exception as e:
                 print(str(e))
 
-    def apply(self, incs: List | Dict, paths: List[str], printFunc, errFunc: Callable ) -> List | Dict:
+    def apply(self, incs: List[Any] | Dict[Any, Any] | Iterator[Any], paths: List[str], printFunc, errFunc: Callable) -> List[Any] | Dict[Any, Any] | Iterator[Any]:
         try:
             output = incs   # initial input
             for script in paths:
