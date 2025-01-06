@@ -49,7 +49,7 @@ pdh = "pdh.main:main"
 pylint = "^3.3.1"
 black = "^24.10.0"
 pytest = "^8.3.3"
-pytest-cov = "^4.0.0"
+pytest-cov = ">=4,<7"
 pytest-mock = "^3.14.0"
 ruff = "^0.8.4"
 
