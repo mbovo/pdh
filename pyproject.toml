@@ -39,7 +39,7 @@ PyYAML = "^6.0.2"
 humanize = "^4.10.0"
 jsonpath-ng = "^1.7.0"
 deprecation = "^2.1.0"
-setuptools = "^72.1.0"      # needed for poetry2nix and nix build since the provided version by nixpkgs unstable is still 72.x
+setuptools = ">=72.1,<79.0"      # needed for poetry2nix and nix build since the provided version by nixpkgs unstable is still 72.x
 dikdik = "^0.1.6"
 
 [tool.poetry.scripts]
