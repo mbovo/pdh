@@ -538,6 +538,23 @@ files = [
 ]
 
 [[package]]
+name = "pagerduty"
+version = "4.0.1"
+description = "Clients for PagerDuty's Public APIs"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "pagerduty-4.0.1-py3-none-any.whl", hash = "sha256:1007e0892a219ad05aad442ea401166797cad9c7d031d89619acf3c0083ce417"},
+    {file = "pagerduty-4.0.1.tar.gz", hash = "sha256:36e0608228526f0dacd6ae16402259a91e11d3d7fa357f37ddbafbf8850d5e1f"},
+]
+
+[package.dependencies]
+certifi = "*"
+requests = "*"
+urllib3 = "*"
+
+[[package]]
 name = "pathspec"
 version = "0.12.1"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -548,22 +565,6 @@ files = [
     {file = "pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08"},
     {file = "pathspec-0.12.1.tar.gz", hash = "sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712"},
 ]
-
-[[package]]
-name = "pdpyras"
-version = "5.4.1"
-description = "PagerDuty Python REST API Sessions."
-optional = false
-python-versions = ">=3.6"
-groups = ["main"]
-files = [
-    {file = "pdpyras-5.4.1-py2.py3-none-any.whl", hash = "sha256:e16020cf57e4c916ab3dace7c7dffe21a2e7059ab7411ce3ddf1e620c54e9c89"},
-    {file = "pdpyras-5.4.1.tar.gz", hash = "sha256:36021aff5979a79f1d87edc95e0c46e98ce8549292bc0cab3d9f33501795703b"},
-]
-
-[package.dependencies]
-requests = "*"
-urllib3 = "*"
 
 [[package]]
 name = "platformdirs"
@@ -1149,4 +1150,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "f1b571c095911246c8674f5bdf1f477877d9c4b561a4e9b986f29e64d068102b"
+content-hash = "be085860a5967384206dcf3d39be344fe6092659fcf2dcbaa902cc3410e5d412"
