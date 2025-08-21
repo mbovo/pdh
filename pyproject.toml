@@ -48,7 +48,7 @@ ignore = "E203"
 [tool.ruff]
 select = [
     "E",  # pycodestyle errors
-    
+
     "F",  # pyflakes
     "C",  # flake8-comprehensions
 ]
