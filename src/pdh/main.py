@@ -271,8 +271,11 @@ def inc_list(ctx, everything, user, new, ack, output, snooze, resolve, high, low
         # define here how print in "plain" way (ie if output=plain)
         def plain_print_f(i):
             s = ""
-            for f in fields:
-                s += f"{i[f]}\t"
+            try:
+                for f in fields:
+                    s += f"{i[f]}\t"
+            except KeyError:
+                pass
             print(s)
 
 
