@@ -1,46 +1,31 @@
-[tool.black]
-line-length = 180
-
-[tool.flake8]
-max-line-length = 172
-ignore = "E203"
-
-[tool.ruff]
-select = [
-    "E",  # pycodestyle errors
-    "F",  # pyflakes
-    "C",  # flake8-comprehensions
-]
-line-length = 172
-# Allow unused variables when underscore-prefixed.
-ignore = [
-    "E501",
-    "C408", # Unnecessary dict call - rewrite as a literal.
-    "C901", # Function is too complex
-    "C416", # Unnecessary list comprehension
-]
-
-[tool.poetry]
+[project]
 name = "pdh"
 version = "0.8.0"
 description = "Pagerduty CLI for Humans"
-authors = ["Manuel Bovo <manuel.bovo@gmail.com>"]
-license = "GPL-3.0-or-later"
-repository = "https://github.com/mbovo/pdh"
+authors = [
+    {name = "Manuel Bovo",email = "manuel.bovo@gmail.com"}
+]
+license = {text = "GPL-3.0-or-later"}
+urls ={"Source" = "https://github.com/mbovo/pdh"}
 readme = "README.md"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "click (>=8.1.7,<9.0.0)",
+    "colorama (>=0.4.6,<0.5.0)",
+    "rich (>=13.9.4,<14.0.0)",
+    "pyyaml (>=6.0.2,<7.0.0)",
+    "humanize (>=4.10.0,<5.0.0)",
+    "jsonpath-ng (>=1.7.0,<2.0.0)",
+    "deprecation (>=2.1.0,<3.0.0)",
+    "dikdik (>=0.1.6,<0.2.0)",
+    "pagerduty (>=4.0.1,<5.0.0)",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-click = "^8.1.7"
-colorama = "^0.4.6"
-pdpyras = "^5.4.0"
-rich = "^13.9.4"
-PyYAML = "^6.0.2"
-humanize = "^4.10.0"
-jsonpath-ng = "^1.7.0"
-deprecation = "^2.1.0"
-setuptools = "^72.1.0"      # needed for poetry2nix and nix build since the provided version by nixpkgs unstable is still 72.x
-dikdik = "^0.1.6"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 
 [tool.poetry.scripts]
 pdh = "pdh.main:main"
@@ -53,6 +38,25 @@ pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 ruff = "^0.11.2"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.black]
+line-length = 180
+
+[tool.flake8]
+max-line-length = 172
+ignore = "E203"
+
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+
+    "F",  # pyflakes
+    "C",  # flake8-comprehensions
+]
+line-length = 172
+# Allow unused variables when underscore-prefixed.
+ignore = [
+    "E501",
+    "C408", # Unnecessary dict call - rewrite as a literal.
+    "C901", # Function is too complex
+    "C416", # Unnecessary list comprehension
+]

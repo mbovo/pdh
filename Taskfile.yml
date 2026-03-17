@@ -82,8 +82,8 @@ tasks:
 
   setup-ci:
     preconditions:
-      - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 >= 8) }') = 1 ]"
-        msg: "Required python version not found (>=3.8)"
+      - sh: "[ $(python3 --version | cut -d ' ' -f 2 | awk -F'.' '{print ($2 >= 11) }') = 1 ]"
+        msg: "Required python version not found (>=3.11)"
     cmds:
       - task: pre-commit-setup
       - task: poetry-setup
