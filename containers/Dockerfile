@@ -3,7 +3,7 @@ WORKDIR /app
 COPY . /app/
 RUN apt-get update && apt-get install -y curl=* \
   && sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d \
-  && pip install --no-cache-dir poetry==1.8.1 \
+  && pip install --no-cache-dir poetry==2.1.4 \
   && ./bin/task build
 
 FROM python:3.11-slim

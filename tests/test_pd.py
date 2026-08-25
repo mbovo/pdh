@@ -101,29 +101,34 @@ class FakePD(object):
 def config() -> Config:
     # This is the test token from https://developer.pagerduty.com/api-reference
     c = Config()
-    c.from_dict({"apikey": "y_NbAkKc66ryYTWUXYEu", "email": "user@domain.tld", "uid": "PXCT22H"})
+    c.from_dict({"apikey": "y_NbAkKc66ryYTWUXYEu",
+                "email": "user@domain.tld", "uid": "PXCT22H"})
     return c
 
 
 @pytest.fixture
 def incidents(mocker: MockerFixture, config: Config) -> pd.Incidents:
-    mocker.patch("pdpyras.APISession.iter_all", side_effect=FakePD.iter_all)
-    mocker.patch("pdpyras.APISession.rget", side_effect=FakePD.rget)
-    mocker.patch("pdpyras.APISession.list_all", side_effect=FakePD.list_all)
-    mocker.patch("pdpyras.APISession.rput", side_effect=FakePD.rput)
-    mocker.patch("pdpyras.APISession.get", side_effect=FakePD.get)
-    mocker.patch("pdpyras.APISession.post", side_effect=FakePD.post)
+    mocker.patch("pagerduty.RestApiV2Client.iter_all",
+                 side_effect=FakePD.iter_all)
+    mocker.patch("pagerduty.RestApiV2Client.rget", side_effect=FakePD.rget)
+    mocker.patch("pagerduty.RestApiV2Client.list_all",
+                 side_effect=FakePD.list_all)
+    mocker.patch("pagerduty.RestApiV2Client.rput", side_effect=FakePD.rput)
+    mocker.patch("pagerduty.RestApiV2Client.get", side_effect=FakePD.get)
+    mocker.patch("pagerduty.RestApiV2Client.post", side_effect=FakePD.post)
     return pd.PagerDuty(config).incidents
 
 
 @pytest.fixture
 def users(mocker: MockerFixture, config: Config) -> pd.Users:
-    mocker.patch("pdpyras.APISession.iter_all", side_effect=FakePD.iter_all)
-    mocker.patch("pdpyras.APISession.rget", side_effect=FakePD.rget)
-    mocker.patch("pdpyras.APISession.list_all", side_effect=FakePD.list_all)
-    mocker.patch("pdpyras.APISession.rput", side_effect=FakePD.rput)
-    mocker.patch("pdpyras.APISession.get", side_effect=FakePD.get)
-    mocker.patch("pdpyras.APISession.post", side_effect=FakePD.post)
+    mocker.patch("pagerduty.RestApiV2Client.iter_all",
+                 side_effect=FakePD.iter_all)
+    mocker.patch("pagerduty.RestApiV2Client.rget", side_effect=FakePD.rget)
+    mocker.patch("pagerduty.RestApiV2Client.list_all",
+                 side_effect=FakePD.list_all)
+    mocker.patch("pagerduty.RestApiV2Client.rput", side_effect=FakePD.rput)
+    mocker.patch("pagerduty.RestApiV2Client.get", side_effect=FakePD.get)
+    mocker.patch("pagerduty.RestApiV2Client.post", side_effect=FakePD.post)
     return pd.PagerDuty(config).users
 
 
