@@ -194,7 +194,9 @@ class PDH(object):
     @staticmethod
     def resolve(cfg: Config, incIDs: list = []) -> None:
         pd = PagerDuty(cfg)
-        incs = pd.incidents.list()
+
+        # Use mine for faster iteration through incs
+        incs = pd.incidents.mine()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for i in incs:
             print(f"[green]✅[/green] {i['id']} [grey50]{i['title']}[/grey50]")
@@ -205,7 +207,8 @@ class PDH(object):
         pd = PagerDuty(cfg)
         import datetime
 
-        incs = pd.incidents.list()
+        # Use mine for faster iteration through incs
+        incs = pd.incidents.mine()
         incs = Filter.apply(incs, filters=[Filter.inList("id", incIDs)])
         for id in incIDs:
             print(f"Snoozing incident {id} for { str(datetime.timedelta(seconds=duration))}")
