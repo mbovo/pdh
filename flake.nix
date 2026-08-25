@@ -24,7 +24,7 @@
           inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides mkPoetryPackages;
           overrides = defaultPoetryOverrides.extend
                             (self: super: {
-                              pdpyras = super.pdpyras.overridePythonAttrs
+                              pagerduty = super.pagerduty.overridePythonAttrs
                               (
                                 old: {
                                   buildInputs = (old.buildInputs or [ ]) ++ [ super.setuptools ];
