@@ -18,7 +18,7 @@ dependencies = [
     "jsonpath-ng (>=1.7.0,<2.0.0)",
     "deprecation (>=2.1.0,<3.0.0)",
     "dikdik (>=0.1.6,<0.2.0)",
-    "pagerduty (>=4.0.1,<5.0.0)",
+    "pagerduty (>=4.1.1,<5.0.0)",
 ]
 
 
