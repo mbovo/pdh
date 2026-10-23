@@ -70,6 +70,7 @@
           devShell = pkgs.mkShell {
             inputsFrom = [ self.packages.${system}.cli];
             packages = with pkgs; [
+              hadolint
               pre-commit
               go-task
               (python3.withPackages (ps: with ps; [ self.packages.${system}.module ]))
