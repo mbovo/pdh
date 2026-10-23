@@ -1,6 +1,6 @@
 [project]
 name = "pdh"
-version = "0.8.0"
+version = "0.8.1"
 description = "Pagerduty CLI for Humans"
 authors = [
     {name = "Manuel Bovo",email = "manuel.bovo@gmail.com"}

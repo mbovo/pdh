@@ -23,7 +23,7 @@ repos:
   - repo: https://github.com/hadolint/hadolint
     rev: "v2.10.0"
     hooks:
-      - id: hadolint-docker
+      - id: hadolint
         args:
           - --ignore
           - DL4006
