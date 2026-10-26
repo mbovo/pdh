@@ -34,7 +34,7 @@ pdh = "pdh.main:main"
 pylint = "^3.3.6"
 black = "^25.1.0"
 pytest = "^8.3.3"
-pytest-cov = "^6.0.0"
+pytest-cov = "^7.1.0"
 pytest-mock = "^3.14.0"
 ruff = "^0.11.2"
 
